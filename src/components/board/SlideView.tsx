@@ -53,7 +53,7 @@ export function SlideView({ data, names, thumb = false }: { data: SlideData; nam
           <img src={mascot} alt="" width={1024} height={1024} className="mt-auto -mb-6 h-[260px] w-[260px] drop-shadow-xl" />
         </div>
         <div className={`flex min-w-0 flex-1 flex-col gap-8 ${thumb ? "pointer-events-none" : ""}`}>
-          {data.widgets.map((w) => (
+          {data.widgets.filter((w) => !thumb || w.type !== "spotify").map((w) => (
             <WidgetView key={w.id} w={w} names={names} />
           ))}
         </div>
