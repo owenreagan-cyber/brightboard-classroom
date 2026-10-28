@@ -25,9 +25,9 @@ export type Slide = {
 export type BgKey = "sakura" | "sky" | "stars" | "cream";
 
 export const BACKGROUNDS: { key: BgKey; label: string }[] = [
-  { key: "sakura", label: "Sakura classroom" },
-  { key: "sky", label: "Summer sky" },
-  { key: "stars", label: "Starry night" },
+  { key: "sakura", label: "Sunset showdown" },
+  { key: "sky", label: "Hero sky" },
+  { key: "stars", label: "Night city" },
   { key: "cream", label: "Plain paper" },
 ];
 

@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import sakura from "@/assets/bg-sakura.jpg";
-import sky from "@/assets/bg-sky.jpg";
-import stars from "@/assets/bg-stars.jpg";
-import mascot from "@/assets/mascot.png";
+import sunset from "@/assets/bg-hero-sunset.jpg";
+import sky from "@/assets/bg-hero-sky.jpg";
+import night from "@/assets/bg-hero-night.jpg";
+import mascot from "@/assets/mascot-hero.png";
 import type { BgKey, SlideData } from "@/lib/board";
 import { WidgetView } from "./widgets";
 
-const BG: Record<BgKey, string | null> = { sakura, sky, stars, cream: null };
+const BG: Record<BgKey, string | null> = { sakura: sunset, sky, stars: night, cream: null };
 
 export function ScaledSlide({ children, className = "" }: { children: ReactNode; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
