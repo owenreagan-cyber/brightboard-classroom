@@ -133,7 +133,7 @@ export function getSequenceState(start: string, steps: SequenceStep[], now: Date
   let cursor = parseTime(start) * 60;
   if (nowSec < cursor) return { status: "waiting", startsInSec: cursor - nowSec };
   for (let i = 0; i < steps.length; i++) {
-    const len = Math.max(0, steps[i].minutes) * 60;
+    const len = Math.max(0, steps[i]!.minutes) * 60;
     if (nowSec < cursor + len) return { status: "running", index: i, remainingSec: cursor + len - nowSec, stepSec: len };
     cursor += len;
   }
@@ -143,7 +143,7 @@ export function getSequenceState(start: string, steps: SequenceStep[], now: Date
 /** Clock time a step begins, e.g. "7:45". */
 export function stepStartLabel(start: string, steps: SequenceStep[], index: number): string {
   let m = parseTime(start);
-  for (let i = 0; i < index; i++) m += steps[i].minutes;
+  for (let i = 0; i < index; i++) m += steps[i]!.minutes;
   const h = Math.floor(m / 60) % 24;
   const mm = m % 60;
   return `${((h + 11) % 12) + 1}:${String(mm).padStart(2, "0")}`;

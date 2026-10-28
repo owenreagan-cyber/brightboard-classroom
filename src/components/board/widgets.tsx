@@ -110,9 +110,9 @@ export function SequenceWidget({ w }: { w: Extract<Widget, { type: "sequence" }>
       <div className="slide-kicker text-muted-foreground">Our routine · starts {stepStartLabel(w.start, w.steps, 0)}</div>
       {st.status === "running" && (
         <div className="mt-2 flex items-center gap-8">
-          <div style={{ fontSize: 110 }}>{WORK_SYMBOLS[w.steps[st.index].symbol]?.emoji}</div>
+          <div style={{ fontSize: 110 }}>{WORK_SYMBOLS[w.steps[st.index]!.symbol]?.emoji}</div>
           <div className="min-w-0">
-            <div className="slide-body-lg font-display text-foreground">{w.steps[st.index].label}</div>
+            <div className="slide-body-lg font-display text-foreground">{w.steps[st.index]!.label}</div>
             <div className="font-display text-primary" style={{ fontSize: 96, lineHeight: 1 }}>{formatSec(st.remainingSec)}</div>
           </div>
         </div>
@@ -160,10 +160,10 @@ export function PickerWidget({ names }: { names: string[] }) {
     setSpinning(true);
     let n = 0;
     const t = setInterval(() => {
-      setShown(names[Math.floor(Math.random() * names.length)]);
+      setShown(names[Math.floor(Math.random() * names.length)] ?? null);
       if (++n > 18) {
         clearInterval(t);
-        const final = from[Math.floor(Math.random() * from.length)];
+        const final = from[Math.floor(Math.random() * from.length)]!;
         setShown(final);
         setUsed((u) => [...u, final]);
         setSpinning(false);
