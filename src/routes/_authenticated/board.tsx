@@ -57,7 +57,7 @@ function Board() {
   }, []);
 
   useEffect(() => {
-    if (slides?.[idx]) document.title = `${idx + 1}/${slides.length} — ${slides[idx].title}`;
+    if (slides?.[idx]) document.title = `${idx + 1}/${slides.length} — ${slides[idx]!.title}`;
   }, [idx, slides]);
 
   const save = (s: Slide) => {
@@ -118,7 +118,7 @@ function Board() {
   };
 
   if (!slides) return <div className="flex min-h-screen items-center justify-center font-display text-2xl text-primary">Loading your board…</div>;
-  const current = slides[idx];
+  const current = slides[idx]!;
 
   return (
     <div className="flex h-screen flex-col bg-secondary">
@@ -198,7 +198,7 @@ function Presenter({ slides, idx, names, go, onExit }: { slides: Slide[]; idx: n
         touchX.current = null;
       }}
     >
-      <ScaledSlide className="h-full w-full"><SlideView data={slides[idx].data} names={names} /></ScaledSlide>
+      <ScaledSlide className="h-full w-full"><SlideView data={slides[idx]!.data} names={names} /></ScaledSlide>
       <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-card/90 px-3 py-1 opacity-0 transition group-hover:opacity-100">
         <Button size="icon" variant="ghost" aria-label="Previous slide" onClick={() => go(Math.max(0, idx - 1))}><ChevronLeft /></Button>
         <span className="text-sm font-bold">{idx + 1} / {slides.length}</span>
