@@ -4,16 +4,16 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
-import sakura from "@/assets/bg-sakura.jpg";
-import mascot from "@/assets/mascot.png";
+import sunset from "@/assets/bg-hero-sunset.jpg";
+import mascot from "@/assets/mascot-hero.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Sakura Board — Anime classroom slides for first grade" },
-      { name: "description", content: "Morning messages, timer sequences, name picker and class music on one cute classroom screen." },
-      { property: "og:title", content: "Sakura Board — Anime classroom slides" },
-      { property: "og:description", content: "Morning messages, timer sequences, name picker and class music on one cute classroom screen." },
+      { title: "Hero Board — Shonen anime classroom slides for first grade" },
+      { name: "description", content: "Morning messages, timer sequences, name picker and class music on one epic classroom screen." },
+      { property: "og:title", content: "Hero Board — Shonen anime classroom slides" },
+      { property: "og:description", content: "Morning messages, timer sequences, name picker and class music on one epic classroom screen." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -35,14 +35,14 @@ function Index() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden" style={{ backgroundImage: `url(${sakura})`, backgroundSize: "cover", backgroundPosition: "center" }}>
+    <div className="relative min-h-screen overflow-hidden" style={{ backgroundImage: `url(${sunset})`, backgroundSize: "cover", backgroundPosition: "center" }}>
       <div className="absolute inset-0 bg-background/40" />
       <main className="relative mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center gap-6 px-6 text-center">
-        <img src={mascot} alt="Sakura Board cat mascot" width={1024} height={1024} className="h-40 w-40 drop-shadow-xl" />
+        <img src={mascot} alt="Hero Board ninja cat mascot" width={1024} height={1024} className="h-40 w-40 drop-shadow-xl" />
         <div className="widget-card rounded-[40px] px-10 py-10">
-          <h1 className="font-display text-5xl text-primary md:text-6xl">Sakura Board</h1>
+          <h1 className="font-display text-5xl text-primary md:text-6xl">Hero Board</h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-foreground">
-            A cozy anime-style classroom screen: morning messages, auto-running timer routines, a name picker, work symbols and class music.
+            A shonen anime classroom screen: morning messages, auto-running timer routines, a name picker, work symbols and class music. Plus ultra!
           </p>
           <div className="mt-8">
             {signedIn ? (
