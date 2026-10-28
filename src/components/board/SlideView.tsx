@@ -6,7 +6,7 @@ import mascot from "@/assets/mascot-hero.png";
 import type { BgKey, SlideData } from "@/lib/board";
 import { WidgetView } from "./widgets";
 
-const BG: Record<BgKey, string | null> = { sunset, sky, night, cream: null };
+const BG: Record<BgKey, string | null> = { sakura: sunset, sky, stars: night, cream: null };
 
 export function ScaledSlide({ children, className = "" }: { children: ReactNode; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
