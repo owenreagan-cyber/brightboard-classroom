@@ -11,10 +11,10 @@ import { SlideEditor } from "@/components/board/SlideEditor";
 import { templateSlides, type Slide, type SlideData } from "@/lib/board";
 import mascot from "@/assets/mascot.png";
 
-type Search = { slide?: number };
+type Search = { slide?: number | undefined };
 
 export const Route = createFileRoute("/_authenticated/board")({
-  validateSearch: (s: Record<string, unknown>): Search => ({ slide: s.slide ? Number(s.slide) : undefined }),
+  validateSearch: (s: Record<string, unknown>): Search => ({ slide: s["slide"] ? Number(s["slide"]) : undefined }),
   head: () => ({
     meta: [
       { title: "My Class Board — Sakura Board" },
@@ -43,11 +43,11 @@ function Board() {
   useEffect(() => {
     (async () => {
       const { data, error } = await supabase.from("slides").select("id, position, title, data").order("position");
-      if (error) return toast.error(error.message);
+      if (error) { toast.error(error.message); return; }
       let rows = data as unknown as Slide[];
       if (!rows.length) {
         const ins = await supabase.from("slides").insert(templateSlides().map((s) => ({ ...s, data: s.data as never }))).select("id, position, title, data").order("position");
-        if (ins.error) return toast.error(ins.error.message);
+        if (ins.error) { toast.error(ins.error.message); return; }
         rows = ins.data as unknown as Slide[];
       }
       setSlides(rows);
@@ -75,15 +75,15 @@ function Board() {
     const { data: row, error } = await supabase.from("slides")
       .insert({ title: from ? from.title + " copy" : "New slide", position: slides.length, data: data as never })
       .select("id, position, title, data").single();
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setSlides([...slides, row as unknown as Slide]);
     go(slides.length);
   };
 
   const deleteSlide = async (s: Slide) => {
-    if (!slides || slides.length <= 1) return toast("Keep at least one slide");
+    if (!slides || slides.length <= 1) { toast("Keep at least one slide"); return; }
     const { error } = await supabase.from("slides").delete().eq("id", s.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setSlides(slides.filter((x) => x.id !== s.id));
     go(Math.max(0, idx - 1));
   };
@@ -93,7 +93,7 @@ function Board() {
     const j = idx + dir;
     if (j < 0 || j >= slides.length) return;
     const next = [...slides];
-    [next[idx], next[j]] = [next[j], next[idx]];
+    const a = next[idx]!; next[idx] = next[j]!; next[j] = a;
     const withPos = next.map((s, i) => ({ ...s, position: i }));
     setSlides(withPos);
     go(j);
@@ -105,7 +105,7 @@ function Board() {
     const res = rosterId
       ? await supabase.from("rosters").update({ students: list }).eq("id", rosterId).select("id").single()
       : await supabase.from("rosters").insert({ students: list }).select("id").single();
-    if (res.error) return toast.error(res.error.message);
+    if (res.error) { toast.error(res.error.message); return; }
     setRosterId(res.data.id);
     setNames(list);
     setRosterOpen(false);
@@ -189,10 +189,10 @@ function Presenter({ slides, idx, names, go, onExit }: { slides: Slide[]; idx: n
   return (
     <div
       className="fixed inset-0 z-50 bg-foreground group"
-      onTouchStart={(e) => (touchX.current = e.touches[0].clientX)}
+      onTouchStart={(e) => (touchX.current = e.touches[0]!.clientX)}
       onTouchEnd={(e) => {
         if (touchX.current == null) return;
-        const dx = e.changedTouches[0].clientX - touchX.current;
+        const dx = e.changedTouches[0]!.clientX - touchX.current;
         if (dx < -50) go(Math.min(slides.length - 1, idx + 1));
         if (dx > 50) go(Math.max(0, idx - 1));
         touchX.current = null;
