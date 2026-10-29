@@ -159,3 +159,16 @@ export function spotifyEmbedUrl(url: string): string | null {
   const m = url.match(/open\.spotify\.com\/(?:intl-[a-z]+\/)?(playlist|album|track|show|episode)\/([A-Za-z0-9]+)/);
   return m ? `https://open.spotify.com/embed/${m[1]}/${m[2]}` : null;
 }
+
+export type TwoPhaseState =
+  | { phase: 1 | 2; remainingSec: number }
+  | { phase: "done"; remainingSec: 0 };
+
+/** Two chained phases: phase 2 starts the moment phase 1 hits 0:00. */
+export function getTwoPhaseState(p1Min: number, p2Min: number, elapsedSec: number): TwoPhaseState {
+  const a = Math.max(0, p1Min) * 60;
+  const b = Math.max(0, p2Min) * 60;
+  if (elapsedSec < a) return { phase: 1, remainingSec: a - elapsedSec };
+  if (elapsedSec < a + b) return { phase: 2, remainingSec: a + b - elapsedSec };
+  return { phase: "done", remainingSec: 0 };
+}
