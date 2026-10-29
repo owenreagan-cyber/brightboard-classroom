@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScaledSlide, SlideView } from "@/components/board/SlideView";
+import { FloatingLayer } from "@/components/board/floating";
 import { SlideEditor } from "@/components/board/SlideEditor";
 import { templateSlides, type Slide, type SlideData } from "@/lib/board";
 import mascot from "@/assets/mascot-hero.png";
@@ -159,6 +160,8 @@ function Board() {
       </div>
 
       {presenting && <Presenter slides={slides} idx={idx} names={names} go={go} onExit={() => { setPresenting(false); if (document.fullscreenElement) document.exitFullscreen(); }} />}
+
+      <FloatingLayer />
 
       <Dialog open={rosterOpen} onOpenChange={setRosterOpen}>
         <DialogContent>
