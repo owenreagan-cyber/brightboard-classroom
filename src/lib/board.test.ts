@@ -30,3 +30,10 @@ it("converts spotify playlist links to embeds", () => {
     "https://open.spotify.com/embed/playlist/37i9dQZF1DX",
   );
 });
+
+import { getTwoPhaseState } from "./board";
+describe("two-phase timer", () => {
+  it("runs phase 1 first", () => expect(getTwoPhaseState(10, 5, 30)).toEqual({ phase: 1, remainingSec: 570 }));
+  it("switches to phase 2 exactly when phase 1 hits 0:00", () => expect(getTwoPhaseState(10, 5, 600)).toEqual({ phase: 2, remainingSec: 300 }));
+  it("finishes after both phases", () => expect(getTwoPhaseState(10, 5, 900)).toEqual({ phase: "done", remainingSec: 0 }));
+});
