@@ -2,10 +2,10 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Plus, X } from "lucide-react";
 import { formatSec, getTwoPhaseState, uid } from "@/lib/board";
 
-type Kind = "signals" | "timer" | "phases";
+type Kind = "signals" | "timer" | "phases" | "noise";
 type Item = { id: string; kind: Kind; x: number; y: number; z: number };
 
-const LABELS: Record<Kind, string> = { signals: "Voice signals", timer: "Timer", phases: "Two-phase timer" };
+const LABELS: Record<Kind, string> = { signals: "Voice signals", timer: "Timer", phases: "Two-phase timer", noise: "Noise meter" };
 
 function beep() {
   try {
@@ -36,7 +36,7 @@ export function FloatingLayer() {
         <Floating key={it.id} item={it} onFront={() => front(it.id)}
           onMove={(x, y) => setItems((all) => all.map((i) => (i.id === it.id ? { ...i, x, y } : i)))}
           onClose={() => setItems((all) => all.filter((i) => i.id !== it.id))}>
-          {it.kind === "signals" ? <Signals /> : it.kind === "timer" ? <QuickTimer /> : <TwoPhase />}
+          {it.kind === "noise" ? <NoiseMeter /> : it.kind === "signals" ? <Signals /> : it.kind === "timer" ? <QuickTimer /> : <TwoPhase />}
         </Floating>
       ))}
       <div className="pointer-events-auto absolute bottom-4 right-4 flex flex-col items-end gap-2">
@@ -169,6 +169,61 @@ function TwoPhase() {
         </button>
         <button onClick={() => { setRunning(false); setElapsed(0); prev.current = 1; }} className="rounded-full bg-destructive px-5 py-2 font-bold text-destructive-foreground">Reset</button>
       </div>
+    </div>
+  );
+}
+
+function NoiseMeter() {
+  const [on, setOn] = useState(false);
+  const [level, setLevel] = useState(0);
+  const [limit, setLimit] = useState(60);
+  const [err, setErr] = useState<string | null>(null);
+  const [loud, setLoud] = useState(false);
+  const loudSince = useRef<number | null>(null);
+  const limitRef = useRef(limit); limitRef.current = limit;
+  useEffect(() => {
+    if (!on) return;
+    let stop = false; let raf = 0; let stream: MediaStream | null = null; let ctx: AudioContext | null = null;
+    navigator.mediaDevices.getUserMedia({ audio: true }).then((s) => {
+      if (stop) { s.getTracks().forEach((t) => t.stop()); return; }
+      stream = s; ctx = new AudioContext();
+      const an = ctx.createAnalyser(); an.fftSize = 1024;
+      ctx.createMediaStreamSource(s).connect(an);
+      const buf = new Float32Array(an.fftSize); let smooth = 0;
+      const loop = () => {
+        an.getFloatTimeDomainData(buf);
+        let sum = 0; for (const v of buf) sum += v * v;
+        const rms = Math.sqrt(sum / buf.length);
+        const lvl = Math.min(100, Math.max(0, (20 * Math.log10(rms + 1e-8) + 60) * (100 / 55)));
+        smooth = smooth * 0.85 + lvl * 0.15; setLevel(smooth);
+        const now = performance.now();
+        if (smooth > limitRef.current) { loudSince.current ??= now; if (now - loudSince.current > 700) setLoud(true); }
+        else { loudSince.current = null; setLoud(false); }
+        raf = requestAnimationFrame(loop);
+      };
+      loop();
+    }).catch(() => { setErr("Microphone blocked. Allow mic access in your browser."); setOn(false); });
+    return () => { stop = true; cancelAnimationFrame(raf); stream?.getTracks().forEach((t) => t.stop()); void ctx?.close(); setLevel(0); setLoud(false); };
+  }, [on]);
+  const color = loud ? "var(--destructive)" : level > limit * 0.75 ? "var(--accent)" : "var(--primary)";
+  return (
+    <div className="space-y-3 text-center">
+      <div className={`rounded-2xl border-4 py-3 font-display text-2xl transition-all ${loud ? "animate-pulse" : ""}`}
+        style={{ borderColor: color, boxShadow: loud ? `0 0 28px 8px ${color}` : undefined }}>
+        {!on ? "🎤 Noise meter" : loud ? "🔴 TOO LOUD!" : level > limit * 0.75 ? "🟡 Getting loud" : "🟢 Nice and calm"}
+      </div>
+      <div className="relative h-8 overflow-hidden rounded-full border-2 border-foreground bg-muted">
+        <div className="h-full transition-[width] duration-100" style={{ width: `${level}%`, background: color }} />
+        <div className="absolute inset-y-0 w-1 bg-foreground" style={{ left: `${limit}%` }} aria-hidden />
+      </div>
+      <label className="block text-left text-xs font-bold">Too loud at: {limit}
+        <input type="range" min={10} max={95} value={limit} onChange={(e) => setLimit(+e.target.value)} className="w-full" aria-label="Loudness threshold" />
+      </label>
+      {err && <div className="text-xs text-destructive">{err}</div>}
+      <button onClick={() => { setErr(null); setOn((o) => !o); }}
+        className={`rounded-full px-5 py-2 font-bold ${on ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}>
+        {on ? "Stop listening" : "Start listening"}
+      </button>
     </div>
   );
 }
