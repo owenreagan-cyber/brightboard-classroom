@@ -21,7 +21,7 @@ function beep() {
 }
 
 /** Floating, draggable classroom tools that sit above any slide (editor and present mode). */
-export function FloatingLayer() {
+export function FloatingLayer({ assessment = false }: { assessment?: boolean }) {
   const [items, setItems] = useState<Item[]>([]);
   const [menu, setMenu] = useState(false);
   const top = useRef(10);
@@ -32,7 +32,7 @@ export function FloatingLayer() {
   };
   return (
     <div className="pointer-events-none fixed inset-0 z-[60]">
-      {items.map((it) => (
+      {items.filter((it) => !assessment || it.kind !== "noise").map((it) => (
         <Floating key={it.id} item={it} onFront={() => front(it.id)}
           onMove={(x, y) => setItems((all) => all.map((i) => (i.id === it.id ? { ...i, x, y } : i)))}
           onClose={() => setItems((all) => all.filter((i) => i.id !== it.id))}>
@@ -40,7 +40,7 @@ export function FloatingLayer() {
         </Floating>
       ))}
       <div className="pointer-events-auto absolute bottom-4 right-4 flex flex-col items-end gap-2">
-        {menu && (Object.keys(LABELS) as Kind[]).map((k) => (
+        {menu && (Object.keys(LABELS) as Kind[]).filter((k) => !assessment || k !== "noise").map((k) => (
           <button key={k} onClick={() => add(k)} className="rounded-full border-2 border-foreground bg-card px-4 py-2 text-sm font-bold shadow-lg hover:bg-accent">
             {LABELS[k]}
           </button>
