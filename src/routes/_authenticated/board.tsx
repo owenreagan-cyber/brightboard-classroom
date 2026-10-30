@@ -128,7 +128,7 @@ function Board() {
     if (!cur.data.folder || !cur.data.day) { toast("Pick a folder and day for this board first"); return; }
     const { updates, missing } = applyToAllDays(slides, cur);
     updates.forEach(save);
-    const added = await insertMany(missing.map((day) => ({ title: `${cur.data.folder} ${day}`, data: applyToAllDays([cur], cur).missing.length ? { ...structuredClone(cur.data), day } : cur.data })));
+    const added = await insertMany(missing.map((day) => ({ title: `${cur.data.folder} ${day}`, data: { ...structuredClone(cur.data), day } })));
     toast.success(`Layout copied to ${updates.length + added.length} other days`);
   };
 
