@@ -5,6 +5,7 @@ import night from "@/assets/bg-hero-night.jpg";
 import mascot from "@/assets/mascot-hero.png";
 import type { BgKey, SlideData } from "@/lib/board";
 import { WidgetView } from "./widgets";
+import { assessmentWidgets, isAssessment } from "@/lib/library";
 
 const BG: Record<BgKey, string | null> = { sakura: sunset, sky, stars: night, cream: null };
 
@@ -32,6 +33,8 @@ export function ScaledSlide({ children, className = "" }: { children: ReactNode;
 
 export function SlideView({ data, names, thumb = false }: { data: SlideData; names: string[]; thumb?: boolean }) {
   const img = BG[data.bg];
+  const exam = isAssessment(data);
+  const widgets = exam ? assessmentWidgets(data.widgets) : data.widgets;
   const lines = data.body.split("\n").filter(Boolean);
   return (
     <div className="slide-content bg-background font-body" style={img ? { backgroundImage: `url(${img})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>
@@ -50,10 +53,10 @@ export function SlideView({ data, names, thumb = false }: { data: SlideData; nam
               ))}
             </ul>
           </div>
-          <img src={mascot} alt="" width={1024} height={1024} className="mt-auto -mb-6 h-[260px] w-[260px] drop-shadow-xl" />
+          {exam ? <div className="mt-auto rounded-full bg-card px-8 py-4 font-display text-foreground" style={{ fontSize: 40 }}>📝 Assessment — do your best!</div> : <img src={mascot} alt="" width={1024} height={1024} className="mt-auto -mb-6 h-[260px] w-[260px] drop-shadow-xl" />}
         </div>
         <div className={`flex min-w-0 flex-1 flex-col gap-8 ${thumb ? "pointer-events-none" : ""}`}>
-          {data.widgets.filter((w) => !thumb || w.type !== "spotify").map((w) => (
+          {widgets.filter((w) => !thumb || w.type !== "spotify").map((w) => (
             <WidgetView key={w.id} w={w} names={names} />
           ))}
         </div>

@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Copy, LogOut, Play, Plus, Trash2, Users, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Copy, Download, Layers, Upload, LogOut, Play, Plus, Trash2, Users, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +10,8 @@ import { ScaledSlide, SlideView } from "@/components/board/SlideView";
 import { FloatingLayer } from "@/components/board/floating";
 import { SlideEditor } from "@/components/board/SlideEditor";
 import { templateSlides, type Slide, type SlideData } from "@/lib/board";
+import { DAYS, FOLDERS, applyToAllDays, exportLibrary, isAssessment, toBoardJson, type Folder } from "@/lib/library";
+import { ImportDialog, LibraryList, StagedBadge, SuggestionBar, download } from "@/components/board/Library";
 import mascot from "@/assets/mascot-hero.png";
 
 type Search = { slide?: number | undefined };
@@ -36,6 +38,7 @@ function Board() {
   const [rosterOpen, setRosterOpen] = useState(false);
   const [rosterText, setRosterText] = useState("");
   const [presenting, setPresenting] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const idx = Math.min(Math.max(0, (slideParam ?? 1) - 1), Math.max(0, (slides?.length ?? 1) - 1));
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
@@ -101,6 +104,39 @@ function Board() {
     await Promise.all(withPos.map((s) => supabase.from("slides").update({ position: s.position }).eq("id", s.id)));
   };
 
+  const insertMany = async (rows: { title: string; data: SlideData }[]) => {
+    if (!slides || !rows.length) return [];
+    const { data, error } = await supabase.from("slides")
+      .insert(rows.map((r, i) => ({ title: r.title, position: slides.length + i, data: r.data as never })))
+      .select("id, position, title, data").order("position");
+    if (error) { toast.error(error.message); return []; }
+    const added = data as unknown as Slide[];
+    setSlides([...slides, ...added]);
+    return added;
+  };
+
+  const createWeek = async (folder: Folder) => {
+    if (!slides) return;
+    const missing = DAYS.filter((d) => !slides.some((s) => s.data.folder === folder && s.data.day === d));
+    const added = await insertMany(missing.map((day) => ({ title: `${folder} ${day}`, data: { heading: `${folder} ✨`, body: "Type your first line", bg: folder === "Assessments" ? "cream" : "sky", widgets: [], folder, day } })));
+    if (added[0]) { go(slides.length); toast.success(`Created ${added.length} ${folder} boards`); }
+  };
+
+  const applyAll = async () => {
+    if (!slides) return;
+    const cur = slides[idx]!;
+    if (!cur.data.folder || !cur.data.day) { toast("Pick a folder and day for this board first"); return; }
+    const { updates, missing } = applyToAllDays(slides, cur);
+    updates.forEach(save);
+    const added = await insertMany(missing.map((day) => ({ title: `${cur.data.folder} ${day}`, data: { ...structuredClone(cur.data), day } })));
+    toast.success(`Layout copied to ${updates.length + added.length} other days`);
+  };
+
+  const importBoards = async (rows: { title: string; data: SlideData }[]) => {
+    const added = await insertMany(rows);
+    if (added.length && slides) { go(slides.length); toast.success(`Staged ${added.length} board(s) for review`); }
+  };
+
   const saveRoster = async () => {
     const list = rosterText.split("\n").map((n) => n.trim()).filter(Boolean);
     const res = rosterId
@@ -127,6 +163,9 @@ function Board() {
         <img src={mascot} alt="" width={40} height={40} className="h-10 w-10" />
         <span className="font-display text-xl text-primary">Hero Board</span>
         <div className="ml-auto flex gap-2">
+          <Button variant="outline" onClick={() => setImportOpen(true)}><Upload className="h-4 w-4" /> Import JSON</Button>
+          <Button variant="outline" onClick={() => download(`${current.title}.json`, JSON.stringify({ version: 1, boards: [toBoardJson(current)] }, null, 2))}><Download className="h-4 w-4" /> Export board</Button>
+          <Button variant="outline" onClick={() => download("hero-board-library.json", exportLibrary(slides))}><Download className="h-4 w-4" /> Export library</Button>
           <Button variant="outline" onClick={() => { setRosterText(names.join("\n")); setRosterOpen(true); }}><Users className="h-4 w-4" /> Class list</Button>
           <Button onClick={() => { setPresenting(true); document.documentElement.requestFullscreen?.().catch(() => {}); }}><Play className="h-4 w-4" /> Present</Button>
           <Button variant="ghost" size="icon" aria-label="Sign out" onClick={signOut}><LogOut className="h-4 w-4" /></Button>
@@ -135,12 +174,7 @@ function Board() {
 
       <div className="flex min-h-0 flex-1">
         <aside className="w-56 shrink-0 space-y-3 overflow-y-auto border-r bg-card p-3">
-          {slides.map((s, i) => (
-            <button key={s.id} onClick={() => go(i)} className={`block w-full text-left rounded-xl p-1 ${i === idx ? "ring-4 ring-primary" : "ring-1 ring-border"}`}>
-              <ScaledSlide className="aspect-video w-full rounded-lg"><SlideView data={s.data} names={names} thumb /></ScaledSlide>
-              <div className="mt-1 truncate px-1 text-xs font-bold">{i + 1}. {s.title}</div>
-            </button>
-          ))}
+          <LibraryList slides={slides} currentId={current.id} names={names} onOpen={(s) => go(slides.indexOf(s))} onCreateWeek={createWeek} />
           <Button variant="secondary" className="w-full" onClick={() => addSlide()}><Plus className="h-4 w-4" /> New slide</Button>
         </aside>
 
@@ -150,7 +184,19 @@ function Board() {
             <Button size="sm" variant="outline" onClick={() => move(1)}>Move down <ChevronRight className="h-4 w-4" /></Button>
             <Button size="sm" variant="outline" onClick={() => addSlide(current)}><Copy className="h-4 w-4" /> Duplicate</Button>
             <Button size="sm" variant="outline" onClick={() => deleteSlide(current)}><Trash2 className="h-4 w-4" /> Delete</Button>
+            <select aria-label="Folder" className="h-9 rounded-md border bg-card px-2 text-sm" value={current.data.folder ?? ""}
+              onChange={(e) => save({ ...current, data: { ...current.data, folder: (e.target.value || undefined) as SlideData["folder"] } })}>
+              <option value="">No folder</option>{FOLDERS.map((f) => <option key={f}>{f}</option>)}
+            </select>
+            <select aria-label="Day" className="h-9 rounded-md border bg-card px-2 text-sm" value={current.data.day ?? ""}
+              onChange={(e) => save({ ...current, data: { ...current.data, day: (e.target.value || undefined) as SlideData["day"] } })}>
+              <option value="">No day</option>{DAYS.map((d) => <option key={d}>{d}</option>)}
+            </select>
+            <Button size="sm" variant="outline" onClick={applyAll}><Layers className="h-4 w-4" /> Apply this layout to all days</Button>
+            {current.data.staged && <><StagedBadge /><Button size="sm" onClick={() => save({ ...current, data: { ...current.data, staged: false } })}><Check className="h-4 w-4" /> Approve</Button></>}
+            {isAssessment(current.data) && <span className="rounded-full bg-foreground px-2 py-0.5 text-xs font-bold text-background">🔒 Assessment Mode</span>}
           </div>
+          <SuggestionBar slides={slides} onOpen={(s) => go(slides.indexOf(s))} />
           <ScaledSlide className="flex-1 rounded-2xl shadow-xl"><SlideView data={current.data} names={names} /></ScaledSlide>
         </main>
 
@@ -161,7 +207,8 @@ function Board() {
 
       {presenting && <Presenter slides={slides} idx={idx} names={names} go={go} onExit={() => { setPresenting(false); if (document.fullscreenElement) document.exitFullscreen(); }} />}
 
-      <FloatingLayer />
+      <FloatingLayer assessment={isAssessment(current.data)} />
+      <ImportDialog open={importOpen} onOpenChange={setImportOpen} onImport={importBoards} />
 
       <Dialog open={rosterOpen} onOpenChange={setRosterOpen}>
         <DialogContent>
