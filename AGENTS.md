@@ -12,3 +12,4 @@
 - Slides store their content (heading, body, background, tools) as one JSON `data` column so new slide tools need no database change.
 - Slide tools live in src/components/board/widgets.tsx; timer-sequence math lives in src/lib/board.ts with tests next to it.
 - Board library (folders/days/staged) lives inside each slide's data JSON; schema, suggestions and import/export logic in src/lib/library.ts with tests next to it — keeps the library without database changes.
+- Resolve subject presentation in src/lib/subject-design.ts from folder/day or legacy headings; keep matching artwork and CSS themes separate from saved schedule data so existing boards gain subject designs without migration.

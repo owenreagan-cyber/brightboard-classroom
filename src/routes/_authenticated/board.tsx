@@ -24,6 +24,8 @@ export const Route = createFileRoute("/_authenticated/board")({
       { name: "description", content: "Edit and present your classroom slides, timers and tools." },
       { property: "og:title", content: "My Class Board — Hero Board" },
       { property: "og:description", content: "Edit and present your classroom slides, timers and tools." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Board,
