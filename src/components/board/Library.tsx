@@ -6,6 +6,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScaledSlide, SlideView } from "./SlideView";
 import { DAYS, FOLDERS, SCHEMA_EXAMPLE, parseImport, suggest, type Folder } from "@/lib/library";
 import type { Slide, SlideData } from "@/lib/board";
+import { artFor } from "@/lib/art";
+
+function Art({ d, className = "h-8 w-8" }: { d: Pick<SlideData, "folder" | "day">; className?: string }) {
+  const src = artFor(d);
+  return src ? <img src={src} alt="" className={`${className} shrink-0 rounded-md border-2 border-foreground object-cover`} /> : null;
+}
 
 export function StagedBadge() {
   return <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-accent-foreground">Staged — review</span>;
@@ -20,8 +26,8 @@ export function SuggestionBar({ slides, onOpen }: { slides: Slide[]; onOpen: (s:
   return (
     <div className="flex items-center gap-2 rounded-xl border-2 border-primary bg-card px-3 py-2 text-sm">
       <Sparkles className="h-4 w-4 text-primary" />
-      {current && <><span>Now: <b>{current.data.folder} / {current.data.day}</b></span><Button size="sm" onClick={() => onOpen(current)}>Open</Button></>}
-      {next && <><span className="ml-2">Up next: <b>{next.data.folder}</b></span><Button size="sm" variant="outline" onClick={() => onOpen(next)}>Next →</Button></>}
+      {current && <><Art d={current.data} /><span>Now: <b>{current.data.folder} / {current.data.day}</b></span><Button size="sm" onClick={() => onOpen(current)}>Open</Button></>}
+      {next && <><Art d={next.data} className="ml-2 h-8 w-8" /><span>Up next: <b>{next.data.folder}</b></span><Button size="sm" variant="outline" onClick={() => onOpen(next)}>Next →</Button></>}
     </div>
   );
 }
@@ -42,7 +48,7 @@ export function LibraryList({ slides, currentId, names, onOpen, onCreateWeek }: 
           <div key={g.key} className="rounded-xl border">
             <button className="flex w-full items-center gap-1 px-2 py-2 text-left text-sm font-bold" onClick={() => setOpen({ ...open, [g.key]: !isOpen })}>
               {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-              {g.folder === "Assessments" && <Lock className="h-3 w-3" />}{g.label}
+              {g.folder && <Art d={{ folder: g.folder }} className="h-7 w-7" />}{g.folder === "Assessments" && <Lock className="h-3 w-3" />}{g.label}
               <span className="ml-auto text-xs text-muted-foreground">{g.items.length}</span>
             </button>
             {isOpen && (
@@ -51,7 +57,7 @@ export function LibraryList({ slides, currentId, names, onOpen, onCreateWeek }: 
                   <button key={s.id} onClick={() => onOpen(s)} className={`block w-full rounded-lg p-1 text-left ${s.id === currentId ? "ring-4 ring-primary" : "ring-1 ring-border"}`}>
                     <ScaledSlide className="aspect-video w-full rounded-md"><SlideView data={s.data} names={names} thumb /></ScaledSlide>
                     <div className="mt-1 flex items-center gap-1 px-1 text-xs font-bold">
-                      <span className="truncate">{s.data.day ? `${s.data.day} · ` : ""}{s.title}</span>
+                      <Art d={s.data} className="h-5 w-5" /><span className="truncate">{s.data.day ? `${s.data.day} · ` : ""}{s.title}</span>
                       {s.data.staged && <StagedBadge />}
                     </div>
                   </button>

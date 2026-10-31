@@ -3,6 +3,7 @@ import sunset from "@/assets/bg-hero-sunset.jpg";
 import sky from "@/assets/bg-hero-sky.jpg";
 import night from "@/assets/bg-hero-night.jpg";
 import mascot from "@/assets/mascot-hero.png";
+import { artFor } from "@/lib/art";
 import type { BgKey, SlideData } from "@/lib/board";
 import { WidgetView } from "./widgets";
 import { assessmentWidgets, isAssessment } from "@/lib/library";
