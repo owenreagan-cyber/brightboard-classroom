@@ -1,0 +1,3 @@
+- [ ] Create matching Canva backgrounds for every schedule subject.
+- [ ] Replace the default slide design with subject artwork, backgrounds, and text themes.
+- [ ] Verify subject designs in the signed-in board.
