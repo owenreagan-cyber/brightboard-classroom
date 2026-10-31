@@ -89,6 +89,7 @@ export const BoardSchema = z.object({
   heading: z.string().default(""),
   body: z.string().default(""),
   bg: z.enum(["sakura", "sky", "stars", "cream"]).default("sky"),
+  backgroundStyle: z.enum(["subject", "alternate"]).optional(),
   widgets: z.array(widget).default([]),
 });
 export const LibrarySchema = z.object({ version: z.literal(1), boards: z.array(BoardSchema).min(1) });
@@ -113,13 +114,13 @@ export function parseImport(text: string): { ok: true; boards: { title: string; 
     ok: true,
     boards: res.data.boards.map((b) => ({
       title: b.title,
-      data: { heading: b.heading, body: b.body, bg: b.bg, folder: b.folder, day: b.day, staged: true, widgets: b.widgets.map((w) => ({ ...w, id: uid() }) as Widget) },
+      data: { heading: b.heading, body: b.body, bg: b.bg, backgroundStyle: b.backgroundStyle, folder: b.folder, day: b.day, staged: true, widgets: b.widgets.map((w) => ({ ...w, id: uid() }) as Widget) },
     })),
   };
 }
 
 export function toBoardJson(s: Slide): BoardJson {
-  const { heading, body, bg, folder, day, widgets } = s.data;
-  return { title: s.title, folder, day, heading, body, bg, widgets: widgets.map(({ id: _id, ...w }) => w) as BoardJson["widgets"] };
+  const { heading, body, bg, backgroundStyle, folder, day, widgets } = s.data;
+  return { title: s.title, folder, day, heading, body, bg, backgroundStyle, widgets: widgets.map(({ id: _id, ...w }) => w) as BoardJson["widgets"] };
 }
 export const exportLibrary = (slides: Slide[]) => JSON.stringify({ version: 1, boards: slides.map(toBoardJson) }, null, 2);

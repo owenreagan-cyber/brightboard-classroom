@@ -2,8 +2,9 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import sunset from "@/assets/bg-hero-sunset.jpg";
 import sky from "@/assets/bg-hero-sky.jpg";
 import night from "@/assets/bg-hero-night.jpg";
-import mascot from "@/assets/mascot-hero.png";
 import { artFor } from "@/lib/art";
+import { subjectDesign } from "@/lib/subject-design";
+import { subjectBackground } from "@/lib/subject-backgrounds";
 import type { BgKey, SlideData } from "@/lib/board";
 import { WidgetView } from "./widgets";
 import { assessmentWidgets, isAssessment } from "@/lib/library";
@@ -33,30 +34,36 @@ export function ScaledSlide({ children, className = "" }: { children: ReactNode;
 }
 
 export function SlideView({ data, names, thumb = false }: { data: SlideData; names: string[]; thumb?: boolean }) {
-  const img = BG[data.bg];
+  const subject = subjectDesign(data);
+  const img = data.backgroundStyle === "alternate" ? BG[data.bg] : subjectBackground(subject.key);
   const exam = isAssessment(data);
   const widgets = exam ? assessmentWidgets(data.widgets) : data.widgets;
   const lines = data.body.split("\n").filter(Boolean);
   return (
-    <div className="slide-content bg-background font-body" style={img ? { backgroundImage: `url(${img})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>
+    <div data-subject={subject.key} className="slide-content subject-slide bg-background font-body" style={img ? { backgroundImage: `url(${img})` } : undefined}>
       {!img && <div className="absolute inset-0 paper-dots" />}
-      <div className="absolute inset-[36px] rounded-[64px] border-[10px] border-dashed border-card/80 pointer-events-none" />
-      <div className="relative flex h-full gap-12 p-[90px]">
-        <div className="flex w-[980px] shrink-0 flex-col">
-          <div className="widget-card rounded-[56px] p-12">
-            <h1 className="slide-title font-display text-foreground">{data.heading}</h1>
-            <ul className="mt-8 space-y-5">
-              {lines.map((l, i) => (
-                <li key={i} className="slide-body-lg flex items-start gap-5 text-foreground">
-                  <span className="mt-1 inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary font-display text-primary-foreground" style={{ fontSize: 30 }}>{i + 1}</span>
-                  <span>{l}</span>
-                </li>
-              ))}
-            </ul>
+      <div className="subject-wash" />
+      <div className="subject-layout">
+        <div className={`subject-message ${lines.length > 6 ? "subject-message-dense" : ""}`}>
+          <div className="subject-identifier">
+            <img src={artFor(data)} alt={`${subject.label} schedule card`} className="subject-card-image" />
+            <div>
+              <div className="subject-label">{subject.label}</div>
+              {data.day && <div className="subject-day">{({ Mon: "Monday", Tue: "Tuesday", Wed: "Wednesday", Thu: "Thursday", Fri: "Friday" })[data.day]}</div>}
+            </div>
           </div>
-          {exam ? <div className="mt-auto rounded-full bg-card px-8 py-4 font-display text-foreground" style={{ fontSize: 40 }}>📝 Assessment — do your best!</div> : artFor(data) ? <img src={artFor(data)!} alt="" className="mt-auto h-[300px] w-[300px] rotate-[-3deg] rounded-[40px] border-[10px] border-card object-cover shadow-2xl" /> : <img src={mascot} alt="" width={1024} height={1024} className="mt-auto -mb-6 h-[260px] w-[260px] drop-shadow-xl" />}
+          <h1 className="slide-title font-display text-foreground">{data.heading}</h1>
+          <ul className="subject-steps">
+            {lines.map((l, i) => (
+              <li key={i} className="subject-step">
+                <span className="subject-step-number">{i + 1}</span>
+                <span className="subject-step-text">{l}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="subject-footer">{exam ? "Assessment · Do your best" : "Hero Board"}</div>
         </div>
-        <div className={`flex min-w-0 flex-1 flex-col gap-8 ${thumb ? "pointer-events-none" : ""}`}>
+        <div className={`subject-tools ${thumb ? "pointer-events-none" : ""}`}>
           {widgets.filter((w) => !thumb || w.type !== "spotify").map((w) => (
             <WidgetView key={w.id} w={w} names={names} />
           ))}

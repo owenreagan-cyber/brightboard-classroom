@@ -17,21 +17,17 @@ import snack from "@/assets/anime-snack.jpg.asset.json";
 import spelling from "@/assets/anime-spelling.jpg.asset.json";
 import title from "@/assets/anime-title.jpg.asset.json";
 import writing from "@/assets/anime-writing.jpg.asset.json";
-import { specialFor, type Folder } from "./library";
+import { subjectDesign, type SubjectKey } from "./subject-design";
 import type { SlideData } from "./board";
 
-const SPECIAL_ART = { Music: music, "P.E.": pe, Art: art, "Industrial Arts": industrial, Latin: latin };
-const FOLDER_ART: Record<Folder, { url: string }> = {
-  Homeroom: homeroom, Math: math, Snack: snack, Writing: writing, Movement: movement, Spelling: spelling,
-  Reading: reading, Lunch: lunch, Recess: recess, History: history, Science: science, Specials: music,
-  "Pack Up": packup, Dismissal: dismissal, Assessments: title,
-  Morning: homeroom, "Lunch/Recess/Pack-up": lunch,
+const SUBJECT_ART: Record<SubjectKey, { url: string }> = {
+  homeroom, math, snack, writing, movement, spelling, reading, lunch, recess,
+  history, science, music, pe, art, industrial, latin, packup, dismissal,
+  assessment: title, hero: title,
 };
 
 /** The anime card that identifies a board: its folder's art (specials use the day's special). */
-export function artFor(d: Pick<SlideData, "folder" | "day">): string | null {
-  if (!d.folder) return null;
-  if (d.folder === "Specials" && d.day) return SPECIAL_ART[specialFor(d.day)].url;
-  return FOLDER_ART[d.folder].url;
+export function artFor(d: Pick<SlideData, "folder" | "day"> & { heading?: string }): string {
+  return SUBJECT_ART[subjectDesign(d).key].url;
 }
 export const titleArt = title.url;

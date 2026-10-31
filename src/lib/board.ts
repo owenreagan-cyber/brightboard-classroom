@@ -12,6 +12,7 @@ export type SlideData = {
   heading: string;
   body: string;
   bg: BgKey;
+  backgroundStyle?: "subject" | "alternate" | undefined;
   widgets: Widget[];
   folder?: import("./library").Folder | undefined;
   day?: "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | undefined;
