@@ -54,7 +54,7 @@ export function SlideView({ data, names, thumb = false }: { data: SlideData; nam
               ))}
             </ul>
           </div>
-          {exam ? <div className="mt-auto rounded-full bg-card px-8 py-4 font-display text-foreground" style={{ fontSize: 40 }}>📝 Assessment — do your best!</div> : <img src={mascot} alt="" width={1024} height={1024} className="mt-auto -mb-6 h-[260px] w-[260px] drop-shadow-xl" />}
+          {exam ? <div className="mt-auto rounded-full bg-card px-8 py-4 font-display text-foreground" style={{ fontSize: 40 }}>📝 Assessment — do your best!</div> : artFor(data) ? <img src={artFor(data)!} alt="" className="mt-auto h-[300px] w-[300px] rotate-[-3deg] rounded-[40px] border-[10px] border-card object-cover shadow-2xl" /> : <img src={mascot} alt="" width={1024} height={1024} className="mt-auto -mb-6 h-[260px] w-[260px] drop-shadow-xl" />}
         </div>
         <div className={`flex min-w-0 flex-1 flex-col gap-8 ${thumb ? "pointer-events-none" : ""}`}>
           {widgets.filter((w) => !thumb || w.type !== "spotify").map((w) => (
