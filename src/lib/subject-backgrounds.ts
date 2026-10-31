@@ -1,0 +1,24 @@
+import homeroom from "@/assets/subject-homeroom.jpg.asset.json";
+import math from "@/assets/subject-math.jpg.asset.json";
+import snack from "@/assets/subject-snack.jpg.asset.json";
+import writing from "@/assets/subject-writing.jpg.asset.json";
+import movement from "@/assets/subject-movement.jpg.asset.json";
+import spelling from "@/assets/subject-spelling.jpg.asset.json";
+import reading from "@/assets/subject-reading.jpg.asset.json";
+import lunch from "@/assets/subject-lunch.jpg.asset.json";
+import recess from "@/assets/subject-recess.jpg.asset.json";
+import history from "@/assets/subject-history.jpg.asset.json";
+import science from "@/assets/subject-science.jpg.asset.json";
+import music from "@/assets/subject-music.jpg.asset.json";
+import pe from "@/assets/subject-pe.jpg.asset.json";
+import art from "@/assets/subject-art.jpg.asset.json";
+import industrial from "@/assets/subject-industrial.jpg.asset.json";
+import latin from "@/assets/subject-latin.jpg.asset.json";
+import packup from "@/assets/subject-packup.jpg.asset.json";
+import dismissal from "@/assets/subject-dismissal.jpg.asset.json";
+import assessment from "@/assets/subject-assessment.jpg.asset.json";
+import hero from "@/assets/subject-hero.jpg.asset.json";
+import type { SubjectKey } from "./subject-design";
+
+const backgrounds: Record<SubjectKey, { url: string }> = { homeroom, math, snack, writing, movement, spelling, reading, lunch, recess, history, science, music, pe, art, industrial, latin, packup, dismissal, assessment, hero };
+export const subjectBackground = (key: SubjectKey) => backgrounds[key].url;
