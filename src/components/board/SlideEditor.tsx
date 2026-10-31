@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { BACKGROUNDS, WORK_SYMBOLS, newWidget, type Slide, type Widget } from "@/lib/board";
+import { SUBJECT_DESIGNS, subjectData, subjectDesign, type SubjectKey } from "@/lib/subject-design";
+import { artFor } from "@/lib/art";
 
 const WIDGET_TYPES: { type: Widget["type"]; label: string }[] = [
   { type: "sequence", label: "Timer sequence" },
@@ -34,19 +36,28 @@ export function SlideEditor({ slide, onChange }: { slide: Slide; onChange: (s: S
         <Textarea rows={5} value={d.body} onChange={(e) => setData({ body: e.target.value })} />
       </div>
       <div className="space-y-1.5">
-        <Label>Background</Label>
+        <Label htmlFor="subject-design">Subject design</Label>
+        <select id="subject-design" className="h-10 w-full rounded-md border bg-background px-2 text-sm" value={subjectDesign(d).key}
+          onChange={(e) => setData(subjectData(e.target.value as SubjectKey))}>
+          {SUBJECT_DESIGNS.map((subject) => <option key={subject.key} value={subject.key}>{subject.label}</option>)}
+        </select>
+        <img src={artFor(d)} alt={`${subjectDesign(d).label} schedule card`} className="aspect-video w-full rounded-md object-cover" />
+      </div>
+      <details className="space-y-1.5">
+        <summary className="cursor-pointer text-sm font-medium">Alternate background</summary>
         <div className="grid grid-cols-2 gap-2">
           {BACKGROUNDS.map((b) => (
-            <button
+            <Button variant="outline"
               key={b.key}
-              onClick={() => setData({ bg: b.key })}
-              className={`rounded-xl border-2 px-2 py-2 text-xs font-semibold ${d.bg === b.key ? "border-primary bg-primary/10" : "border-border"}`}
+              onClick={() => setData({ bg: b.key, backgroundStyle: "alternate" })}
+              className={`h-auto whitespace-normal border-2 px-2 py-2 text-xs font-semibold ${d.backgroundStyle === "alternate" && d.bg === b.key ? "border-primary bg-primary/10" : "border-border"}`}
             >
               {b.label}
-            </button>
+            </Button>
           ))}
+          <Button variant="outline" className="col-span-2" onClick={() => setData({ backgroundStyle: "subject" })}>Subject background</Button>
         </div>
-      </div>
+      </details>
 
       <div className="space-y-3">
         <Label>Tools on this slide</Label>
