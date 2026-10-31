@@ -1,18 +1,33 @@
 import { z } from "zod";
 import { uid, type Slide, type SlideData, type Widget } from "./board";
 
-export const FOLDERS = ["Morning", "Math", "Reading", "Spelling", "Lunch/Recess/Pack-up", "Assessments"] as const;
-export type Folder = (typeof FOLDERS)[number];
+/** Folders follow Mr. Reagan's real bell schedule, in day order. */
+export const FOLDERS = ["Homeroom", "Math", "Snack", "Writing", "Movement", "Spelling", "Reading", "Lunch", "Recess", "History", "Science", "Specials", "Pack Up", "Dismissal", "Assessments"] as const;
+/** Older folder names still accepted on stored/imported boards. */
+export const LEGACY_FOLDERS = ["Morning", "Lunch/Recess/Pack-up"] as const;
+export type Folder = (typeof FOLDERS)[number] | (typeof LEGACY_FOLDERS)[number];
 export const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"] as const;
 export type Day = (typeof DAYS)[number];
 
-/** Daily block schedule used for smart suggestions (minutes since midnight). Assessments never appear. */
-export const BLOCKS: { folder: Exclude<Folder, "Assessments">; from: number; to: number }[] = [
-  { folder: "Morning", from: 7 * 60, to: 8 * 60 + 30 },
-  { folder: "Reading", from: 8 * 60 + 30, to: 9 * 60 + 45 },
-  { folder: "Spelling", from: 9 * 60 + 45, to: 10 * 60 + 30 },
-  { folder: "Math", from: 10 * 60 + 30, to: 11 * 60 + 45 },
-  { folder: "Lunch/Recess/Pack-up", from: 11 * 60 + 45, to: 15 * 60 + 30 },
+export const SPECIALS: Record<Day, "Music" | "P.E." | "Art" | "Industrial Arts" | "Latin"> = { Mon: "Music", Tue: "P.E.", Wed: "Art", Thu: "Industrial Arts", Fri: "Latin" };
+export const specialFor = (d: Day) => SPECIALS[d];
+
+const t = (h: number, m: number) => h * 60 + m;
+/** Daily bell schedule for smart suggestions (minutes since midnight). History & Science share 1:15; Assessments never appear. */
+export const BLOCKS: { folders: Exclude<Folder, "Assessments">[]; from: number; to: number }[] = [
+  { folders: ["Homeroom", "Morning"], from: t(7, 20), to: t(7, 50) },
+  { folders: ["Math"], from: t(7, 50), to: t(9, 5) },
+  { folders: ["Snack"], from: t(9, 5), to: t(9, 20) },
+  { folders: ["Writing"], from: t(9, 20), to: t(10, 5) },
+  { folders: ["Movement"], from: t(10, 5), to: t(10, 40) },
+  { folders: ["Spelling"], from: t(10, 40), to: t(11, 10) },
+  { folders: ["Reading"], from: t(11, 10), to: t(12, 15) },
+  { folders: ["Lunch", "Lunch/Recess/Pack-up"], from: t(12, 15), to: t(12, 50) },
+  { folders: ["Recess", "Lunch/Recess/Pack-up"], from: t(12, 50), to: t(13, 15) },
+  { folders: ["History", "Science"], from: t(13, 15), to: t(13, 50) },
+  { folders: ["Specials"], from: t(13, 50), to: t(14, 35) },
+  { folders: ["Pack Up", "Lunch/Recess/Pack-up"], from: t(14, 35), to: t(14, 40) },
+  { folders: ["Dismissal"], from: t(14, 40), to: t(15, 5) },
 ];
 
 export const isAssessment = (d: SlideData) => d.folder === "Assessments";
