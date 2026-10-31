@@ -13,7 +13,7 @@ export type SlideData = {
   body: string;
   bg: BgKey;
   widgets: Widget[];
-  folder?: "Morning" | "Math" | "Reading" | "Spelling" | "Lunch/Recess/Pack-up" | "Assessments" | undefined;
+  folder?: import("./library").Folder | undefined;
   day?: "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | undefined;
   /** Imported from JSON and awaiting teacher approval. */
   staged?: boolean | undefined;
