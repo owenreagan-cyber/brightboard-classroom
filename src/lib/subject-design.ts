@@ -41,7 +41,7 @@ export function subjectDesign(data: DesignInput) {
   return heading.includes("morning") ? SUBJECT_DESIGNS[0] : SUBJECT_DESIGNS[19];
 }
 
-export function subjectData(key: SubjectKey): { folder?: Folder; day?: SlideData["day"] } {
+export function subjectData(key: SubjectKey): { folder?: Folder | undefined; day?: SlideData["day"] } {
   const design = SUBJECT_DESIGNS.find((d) => d.key === key);
   if (!design) return {};
   return { folder: design.folder, ...("day" in design ? { day: design.day } : {}) };
