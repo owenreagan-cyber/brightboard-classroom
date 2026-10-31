@@ -1,18 +1,31 @@
 import { describe, it, expect } from "vitest";
-import { applyToAllDays, assessmentWidgets, parseImport, suggest, exportLibrary } from "./library";
+import { specialFor, applyToAllDays, assessmentWidgets, parseImport, suggest, exportLibrary } from "./library";
 import type { Slide } from "./board";
 
 const mk = (id: string, folder: Slide["data"]["folder"], day: Slide["data"]["day"], extra = {}): Slide => ({
   id, position: 0, title: id, data: { heading: "", body: "", bg: "sky", widgets: [], folder, day, ...extra },
 });
-const tueMath = new Date(2026, 9, 27, 11, 0); // Tuesday 11:00
+const tueMath = new Date(2026, 9, 27, 8, 0); // Tuesday 8:00
+const at = (h: number, m: number, date = 27) => new Date(2026, 9, date, h, m); // Oct 26 = Mon
 
 describe("smart suggestions", () => {
-  const slides = [mk("m", "Math", "Tue"), mk("l", "Lunch/Recess/Pack-up", "Tue"), mk("a", "Assessments", "Tue")];
-  it("suggests Math/Tue during Tuesday math block, with lunch as next", () => {
+  const slides = [mk("m", "Math", "Tue"), mk("sn", "Snack", "Tue"), mk("a", "Assessments", "Tue")];
+  it("suggests Math/Tue during Tuesday math block, with snack as next", () => {
     const s = suggest(slides, tueMath);
     expect(s.current?.id).toBe("m");
-    expect(s.next?.id).toBe("l");
+    expect(s.next?.id).toBe("sn");
+  });
+  it("follows the real bell schedule", () => {
+    const all = (["Movement", "Spelling", "Reading", "Specials", "Dismissal"] as const).map((f) => mk(f, f, "Tue"));
+    expect(suggest(all, at(10, 5)).current?.id).toBe("Movement");
+    expect(suggest(all, at(10, 40)).current?.id).toBe("Spelling");
+    expect(suggest(all, at(11, 10)).current?.id).toBe("Reading");
+    expect(suggest(all, at(13, 50)).current?.id).toBe("Specials");
+    expect(suggest(all, at(14, 40)).current?.id).toBe("Dismissal");
+    expect(suggest(all, at(15, 5)).current).toBeNull();
+  });
+  it("specials rotate by day", () => {
+    expect(["Mon", "Tue", "Wed", "Thu", "Fri"].map((d) => specialFor(d as "Mon"))).toEqual(["Music", "P.E.", "Art", "Industrial Arts", "Latin"]);
   });
   it("never suggests an Assessments board", () => {
     expect(suggest([mk("a", "Assessments", "Tue")], tueMath).current).toBeNull();

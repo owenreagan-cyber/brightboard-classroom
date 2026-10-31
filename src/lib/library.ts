@@ -47,10 +47,13 @@ export function suggest(slides: Slide[], now: Date): { current: Slide | null; ne
   const day = dayOf(now);
   if (!day) return { current: null, next: null };
   const mins = now.getHours() * 60 + now.getMinutes();
-  const find = (folder: Folder) => slides.find((s) => s.data.folder === folder && s.data.day === day && !s.data.staged) ?? null;
+  const find = (folders: readonly Folder[]) => {
+    for (const f of folders) { const hit = slides.find((s) => s.data.folder === f && s.data.day === day && !s.data.staged); if (hit) return hit; }
+    return null;
+  };
   const i = BLOCKS.findIndex((b) => mins >= b.from && mins < b.to);
   const nextBlock = i >= 0 ? BLOCKS[i + 1] : BLOCKS.find((b) => b.from > mins);
-  return { current: i >= 0 ? find(BLOCKS[i]!.folder) : null, next: nextBlock ? find(nextBlock.folder) : null };
+  return { current: i >= 0 ? find(BLOCKS[i]!.folders) : null, next: nextBlock ? find(nextBlock.folders) : null };
 }
 
 /** Copy widgets + layout (bg, heading, body) from source to every other day in the same folder. */
@@ -81,7 +84,7 @@ const widget = z.discriminatedUnion("type", [
 ]);
 export const BoardSchema = z.object({
   title: z.string().min(1),
-  folder: z.enum(FOLDERS).optional(),
+  folder: z.enum([...FOLDERS, ...LEGACY_FOLDERS]).optional(),
   day: z.enum(DAYS).optional(),
   heading: z.string().default(""),
   body: z.string().default(""),
@@ -95,7 +98,7 @@ export const SCHEMA_EXAMPLE = {
   version: 1,
   boards: [{
     title: "Math Tuesday", folder: "Math", day: "Tue", heading: "Welcome to Math! 🔢", body: "Get your journal\nSharpen your pencil", bg: "sky",
-    widgets: [{ type: "timer", seconds: 600, label: "Warm-up" }, { type: "sequence", start: "10:30", steps: [{ minutes: 10, label: "Mini lesson", symbol: "eyes" }] }],
+    widgets: [{ type: "timer", seconds: 600, label: "Warm-up" }, { type: "sequence", start: "7:50", steps: [{ minutes: 10, label: "Mini lesson", symbol: "eyes" }] }],
   }],
 };
 
