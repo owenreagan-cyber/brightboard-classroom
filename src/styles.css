@@ -203,6 +203,7 @@ body { font-family: var(--font-body); }
 .subject-tools .widget-card { border-width: 3px; border-radius: 8px; padding: 30px; box-shadow: none; }
 .subject-tools .slide-caption { font-size: 25px; }
 .subject-footer { margin-top: auto; padding-top: 24px; font: 700 24px var(--subject-font); color: var(--subject-ink); }
+.subject-tools .font-display { overflow-wrap: anywhere; }
 @utility kid-btn-soft {
   background: var(--accent);
   color: var(--accent-foreground);

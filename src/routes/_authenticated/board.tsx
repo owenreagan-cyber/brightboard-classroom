@@ -161,10 +161,10 @@ function Board() {
 
   return (
     <div className="flex h-screen flex-col bg-secondary">
-      <header className="flex items-center gap-3 border-b bg-card px-4 py-2">
+      <header className="flex flex-wrap items-center gap-3 border-b bg-card px-4 py-2">
         <img src={mascot} alt="" width={40} height={40} className="h-10 w-10" />
         <span className="font-display text-xl text-primary">Hero Board</span>
-        <div className="ml-auto flex gap-2">
+        <div className="ml-auto flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => setImportOpen(true)}><Upload className="h-4 w-4" /> Import JSON</Button>
           <Button variant="outline" onClick={() => download(`${current.title}.json`, JSON.stringify({ version: 1, boards: [toBoardJson(current)] }, null, 2))}><Download className="h-4 w-4" /> Export board</Button>
           <Button variant="outline" onClick={() => download("hero-board-library.json", exportLibrary(slides))}><Download className="h-4 w-4" /> Export library</Button>
@@ -181,7 +181,7 @@ function Board() {
         </aside>
 
         <main className="flex min-w-0 flex-1 flex-col p-4 gap-3">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button size="sm" variant="outline" onClick={() => move(-1)}><ChevronLeft className="h-4 w-4" /> Move up</Button>
             <Button size="sm" variant="outline" onClick={() => move(1)}>Move down <ChevronRight className="h-4 w-4" /></Button>
             <Button size="sm" variant="outline" onClick={() => addSlide(current)}><Copy className="h-4 w-4" /> Duplicate</Button>
