@@ -5,6 +5,7 @@ import night from "@/assets/bg-hero-night.jpg";
 import { artFor } from "@/lib/art";
 import { subjectDesign } from "@/lib/subject-design";
 import { subjectBackground } from "@/lib/subject-backgrounds";
+import { useSubjectThemes } from "@/lib/subject-theme";
 import type { BgKey, SlideData } from "@/lib/board";
 import { WidgetView } from "./widgets";
 import { assessmentWidgets, isAssessment } from "@/lib/library";
@@ -35,18 +36,26 @@ export function ScaledSlide({ children, className = "" }: { children: ReactNode;
 
 export function SlideView({ data, names, thumb = false }: { data: SlideData; names: string[]; thumb?: boolean }) {
   const subject = subjectDesign(data);
-  const img = data.backgroundStyle === "alternate" ? BG[data.bg] : subjectBackground(subject.key);
+  const theme = useSubjectThemes()[subject.key] ?? {};
+  const themeBg = theme.background && theme.background !== "subject" ? BG[theme.background] : subjectBackground(subject.key);
+  const img = data.backgroundStyle === "alternate" ? BG[data.bg] : themeBg;
   const exam = isAssessment(data);
   const widgets = exam ? assessmentWidgets(data.widgets) : data.widgets;
   const lines = data.body.split("\n").filter(Boolean);
+  const vars: Record<string, string> = {};
+  if (img) vars["backgroundImage"] = `url(${img})`;
+  if (theme.ink) vars["--subject-ink"] = theme.ink;
+  if (theme.accent) vars["--subject-accent"] = theme.accent;
+  if (theme.font) vars["--subject-font"] = `"${theme.font}", sans-serif`;
+  const card = theme.card ?? "left";
   return (
-    <div data-subject={subject.key} className="slide-content subject-slide bg-background font-body" style={img ? { backgroundImage: `url(${img})` } : undefined}>
+    <div data-subject={subject.key} data-card={card} className="slide-content subject-slide bg-background font-body" style={vars as React.CSSProperties}>
       {!img && <div className="absolute inset-0 paper-dots" />}
       <div className="subject-wash" />
       <div className="subject-layout">
         <div className={`subject-message ${lines.length > 6 ? "subject-message-dense" : ""}`}>
           <div className="subject-identifier">
-            <img src={artFor(data)} alt={`${subject.label} schedule card`} className="subject-card-image" />
+            {card !== "hidden" && <img src={artFor(data)} alt={`${subject.label} schedule card`} className="subject-card-image" />}
             <div>
               <div className="subject-label">{subject.label}</div>
               {data.day && <div className="subject-day">{({ Mon: "Monday", Tue: "Tuesday", Wed: "Wednesday", Thu: "Thursday", Fri: "Friday" })[data.day]}</div>}
