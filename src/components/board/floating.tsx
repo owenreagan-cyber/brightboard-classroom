@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Plus, X } from "lucide-react";
+import { MysteryStar, PrizeBoard, RandomNumber } from "./games";
 import { formatSec, getTwoPhaseState, uid } from "@/lib/board";
 
-type Kind = "signals" | "timer" | "phases" | "noise";
+type Kind = "signals" | "timer" | "phases" | "noise" | "rng" | "star" | "prize";
+const GAMES: Kind[] = ["noise", "star", "prize"];
 type Item = { id: string; kind: Kind; x: number; y: number; z: number };
 
-const LABELS: Record<Kind, string> = { signals: "Voice signals", timer: "Timer", phases: "Two-phase timer", noise: "Noise meter" };
+const LABELS: Record<Kind, string> = { signals: "Voice signals", timer: "Timer", phases: "Two-phase timer", noise: "Noise meter", rng: "Random number", star: "Mystery star", prize: "100 Prize board" };
 
 function beep() {
   try {
@@ -21,7 +23,7 @@ function beep() {
 }
 
 /** Floating, draggable classroom tools that sit above any slide (editor and present mode). */
-export function FloatingLayer({ assessment = false }: { assessment?: boolean }) {
+export function FloatingLayer({ assessment = false, names = [] }: { assessment?: boolean; names?: string[] }) {
   const [items, setItems] = useState<Item[]>([]);
   const [menu, setMenu] = useState(false);
   const top = useRef(10);
@@ -32,15 +34,15 @@ export function FloatingLayer({ assessment = false }: { assessment?: boolean }) 
   };
   return (
     <div className="pointer-events-none fixed inset-0 z-[60]">
-      {items.filter((it) => !assessment || it.kind !== "noise").map((it) => (
+      {items.filter((it) => !assessment || !GAMES.includes(it.kind)).map((it) => (
         <Floating key={it.id} item={it} onFront={() => front(it.id)}
           onMove={(x, y) => setItems((all) => all.map((i) => (i.id === it.id ? { ...i, x, y } : i)))}
           onClose={() => setItems((all) => all.filter((i) => i.id !== it.id))}>
-          {it.kind === "noise" ? <NoiseMeter /> : it.kind === "signals" ? <Signals /> : it.kind === "timer" ? <QuickTimer /> : <TwoPhase />}
+          {it.kind === "rng" ? <RandomNumber /> : it.kind === "star" ? <MysteryStar names={names} /> : it.kind === "prize" ? <PrizeBoard /> : it.kind === "noise" ? <NoiseMeter /> : it.kind === "signals" ? <Signals /> : it.kind === "timer" ? <QuickTimer /> : <TwoPhase />}
         </Floating>
       ))}
       <div className="pointer-events-auto absolute bottom-4 right-4 flex flex-col items-end gap-2">
-        {menu && (Object.keys(LABELS) as Kind[]).filter((k) => !assessment || k !== "noise").map((k) => (
+        {menu && (Object.keys(LABELS) as Kind[]).filter((k) => !assessment || !GAMES.includes(k)).map((k) => (
           <button key={k} onClick={() => add(k)} className="rounded-full border-2 border-foreground bg-card px-4 py-2 text-sm font-bold shadow-lg hover:bg-accent">
             {LABELS[k]}
           </button>
@@ -57,7 +59,7 @@ export function FloatingLayer({ assessment = false }: { assessment?: boolean }) 
 function Floating({ item, onFront, onMove, onClose, children }: { item: Item; onFront: () => void; onMove: (x: number, y: number) => void; onClose: () => void; children: ReactNode }) {
   const start = useRef<{ px: number; py: number; x: number; y: number } | null>(null);
   return (
-    <div className="pointer-events-auto absolute w-[340px] rounded-3xl border-4 border-foreground bg-card shadow-2xl"
+    <div className="pointer-events-auto absolute w-max min-w-[340px] rounded-3xl border-4 border-foreground bg-card shadow-2xl"
       style={{ left: item.x, top: item.y, zIndex: item.z }} onPointerDown={onFront}>
       <div className="flex items-center rounded-t-[20px] bg-foreground text-background">
         <div className="flex-1 cursor-grab touch-none select-none py-1.5 text-center text-xs font-bold tracking-widest active:cursor-grabbing"
