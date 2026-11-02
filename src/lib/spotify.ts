@@ -101,11 +101,11 @@ export function useSpotifyConnected() {
 // --- player store ---
 export type PlayerState = {
   status: "idle" | "loading" | "ready" | "error";
-  error?: string;
-  deviceId?: string;
+  error?: string | undefined;
+  deviceId?: string | undefined;
   paused: boolean;
-  contextUri?: string;
-  track?: { name: string; artists: string; image?: string };
+  contextUri?: string | undefined;
+  track?: { name: string; artists: string; image?: string | undefined } | undefined;
 };
 let state: PlayerState = { status: "idle", paused: true };
 const listeners = new Set<() => void>();
