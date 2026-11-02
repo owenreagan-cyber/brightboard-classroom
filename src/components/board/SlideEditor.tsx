@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { BACKGROUNDS, WORK_SYMBOLS, newWidget, type Slide, type Widget } from "@/lib/board";
 import { SUBJECT_DESIGNS, subjectData, subjectDesign, type SubjectKey } from "@/lib/subject-design";
 import { artFor } from "@/lib/art";
+import { AiDraftPanel, SubjectThemePanel } from "./SubjectTools";
 
 const WIDGET_TYPES: { type: Widget["type"]; label: string }[] = [
   { type: "sequence", label: "Timer sequence" },
@@ -86,6 +87,7 @@ export function SlideEditor({ slide, onChange }: { slide: Slide; onChange: (s: S
         </div>
       </div>
     </div>
+    </>
   );
 }
 
