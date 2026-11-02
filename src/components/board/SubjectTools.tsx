@@ -19,7 +19,7 @@ export function SubjectThemePanel({ slide }: { slide: Slide }) {
   const themes = useSubjectThemes();
   const theme = themes[subject.key] ?? {};
   const [saving, setSaving] = useState(false);
-  const update = (patch: SubjectTheme) => setSubjectThemes({ ...themes, [subject.key]: cleanTheme({ ...theme, ...patch }) });
+  const update = (patch: Record<string, unknown>) => setSubjectThemes({ ...themes, [subject.key]: cleanTheme({ ...theme, ...patch }) });
   const persist = async (next = themes) => {
     setSaving(true);
     const { error } = await supabase.auth.updateUser({ data: { subjectThemes: next } });
@@ -60,13 +60,13 @@ export function SubjectThemePanel({ slide }: { slide: Slide }) {
 
 export function AiDraftPanel({ slide, onApply }: { slide: Slide; onApply: (heading: string, body: string) => void }) {
   const draft = useServerFn(draftSlideText);
-  const [subject, setSubject] = useState(subjectDesign(slide.data).label);
+  const [subject, setSubject] = useState<string>(subjectDesign(slide.data).label);
   const [goal, setGoal] = useState("");
   const [details, setDetails] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ heading: string; steps: string[] } | null>(null);
   const run = async () => {
-    if (!goal.trim()) return toast.error("Add a lesson goal first");
+    if (!goal.trim()) { toast.error("Add a lesson goal first"); return; }
     setBusy(true);
     try {
       const r = await draft({ data: { subject, goal, details, boardTitle: slide.title } });
