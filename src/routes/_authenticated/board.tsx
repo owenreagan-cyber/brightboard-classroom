@@ -13,6 +13,7 @@ import { templateSlides, type Slide, type SlideData } from "@/lib/board";
 import { DAYS, FOLDERS, applyToAllDays, exportLibrary, isAssessment, toBoardJson, type Folder } from "@/lib/library";
 import { ImportDialog, LibraryList, StagedBadge, SuggestionBar, download } from "@/components/board/Library";
 import mascot from "@/assets/mascot-hero.png";
+import { cleanTheme, setSubjectThemes } from "@/lib/subject-theme";
 
 type Search = { slide?: number | undefined };
 
@@ -48,6 +49,9 @@ function Board() {
 
   useEffect(() => {
     (async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      const saved = (auth.user?.user_metadata?.["subjectThemes"] ?? {}) as Record<string, unknown>;
+      setSubjectThemes(Object.fromEntries(Object.entries(saved).map(([k, v]) => [k, cleanTheme(v)])));
       const { data, error } = await supabase.from("slides").select("id, position, title, data").order("position");
       if (error) { toast.error(error.message); return; }
       let rows = data as unknown as Slide[];
