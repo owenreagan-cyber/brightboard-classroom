@@ -16,7 +16,7 @@ const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 
 const btn = "rounded-full px-3 py-1.5 text-sm font-bold disabled:opacity-40";
 
 export function RandomNumber() {
-  const [s, set] = usePersisted<RngState>("hb-rng", newRng, (v) => isObj(v) && Array.isArray(v.history));
+  const [s, set] = usePersisted<RngState>("hb-rng", newRng, (v) => isObj(v) && Array.isArray(v["history"]));
   const [min, setMin] = useState(String(s.min));
   const [max, setMax] = useState(String(s.max));
   useEffect(() => { setMin(String(s.min)); setMax(String(s.max)); }, [s.min, s.max]);
@@ -47,7 +47,7 @@ export function RandomNumber() {
 }
 
 export function MysteryStar({ names }: { names: string[] }) {
-  const [s, set] = usePersisted<StarState>("hb-star", newStar, (v) => isObj(v) && Array.isArray(v.log));
+  const [s, set] = usePersisted<StarState>("hb-star", newStar, (v) => isObj(v) && Array.isArray(v["log"]));
   const last = s.log[s.log.length - 1];
   return (
     <div className="space-y-3 text-center">
@@ -86,7 +86,7 @@ const TIER_STYLE: Record<Tier, string> = {
 };
 
 export function PrizeBoard() {
-  const [s, set] = usePersisted<PrizeState>("hb-prize", () => newPrizeBoard(), (v) => isObj(v) && Array.isArray(v.tiles) && v.tiles.length === 100 && Array.isArray(v.picked));
+  const [s, set] = usePersisted<PrizeState>("hb-prize", () => newPrizeBoard(), (v) => isObj(v) && Array.isArray(v["tiles"]) && v["tiles"].length === 100 && Array.isArray(v["picked"]));
   const [shown, setShown] = useState<Tier | null>(null);
   const [confirm, setConfirm] = useState(false);
   return (
