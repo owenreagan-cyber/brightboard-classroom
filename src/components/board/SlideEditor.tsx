@@ -22,6 +22,11 @@ export function SlideEditor({ slide, onChange }: { slide: Slide; onChange: (s: S
   const setWidget = (id: string, w: Widget) => setData({ widgets: d.widgets.map((x) => (x.id === id ? w : x)) });
 
   return (
+    <>
+    <div className="space-y-3 px-4 pt-4">
+      <AiDraftPanel slide={slide} onApply={(heading, body) => setData({ heading, body })} />
+      <SubjectThemePanel slide={slide} />
+    </div>
     <div className="space-y-5 p-4">
       <div className="space-y-1.5">
         <Label>Slide name</Label>
