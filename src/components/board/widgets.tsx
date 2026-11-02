@@ -7,6 +7,7 @@ import {
   stepStartLabel,
   type Widget,
 } from "@/lib/board";
+import { initSpotifyPlayer, spotify, spotifyContextUri, useSpotifyConnected, useSpotifyPlayer } from "@/lib/spotify";
 
 function useNow(ms = 1000) {
   const [now, setNow] = useState(() => new Date());
@@ -183,6 +184,8 @@ export function PickerWidget({ names }: { names: string[] }) {
 }
 
 export function SpotifyWidget({ w }: { w: Extract<Widget, { type: "spotify" }> }) {
+  const connected = useSpotifyConnected();
+  if (connected) return <SpotifyPremium url={w.url} />;
   const src = spotifyEmbedUrl(w.url);
   if (!src)
     return (
@@ -194,6 +197,39 @@ export function SpotifyWidget({ w }: { w: Extract<Widget, { type: "spotify" }> }
   return (
     <div className={`${card} p-4`}>
       <iframe src={src} width="100%" height="352" className="rounded-[32px]" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" title="Spotify playlist" />
+    </div>
+  );
+}
+
+function SpotifyPremium({ url }: { url: string }) {
+  const p = useSpotifyPlayer();
+  useEffect(() => initSpotifyPlayer(), []);
+  const uri = spotifyContextUri(url);
+  const onPlaylist = !!uri && p.contextUri === uri;
+  return (
+    <div className={card}>
+      <div className="slide-kicker text-muted-foreground">Class music 🎵</div>
+      <div className="mt-4 flex items-center gap-8">
+        {p.track?.image
+          ? <img src={p.track.image} alt="" className="h-40 w-40 rounded-3xl object-cover" />
+          : <div className="flex h-40 w-40 items-center justify-center rounded-3xl bg-muted" style={{ fontSize: 80 }}>🎧</div>}
+        <div className="min-w-0 flex-1">
+          <div className="slide-body-lg font-display truncate text-foreground">{p.track?.name ?? (p.status === "ready" ? "Ready to play" : "Starting player…")}</div>
+          {p.track && <div className="slide-caption truncate text-muted-foreground">{p.track.artists}</div>}
+        </div>
+      </div>
+      <div className="mt-6 flex flex-wrap gap-4">
+        {uri && !onPlaylist && <button className="kid-btn" disabled={p.status !== "ready"} onClick={() => spotify.playContext(uri, true)}>▶ Play school playlist</button>}
+        {onPlaylist && (
+          <>
+            <button className="kid-btn kid-btn-soft" aria-label="Previous song" onClick={spotify.prev}>⏮</button>
+            <button className="kid-btn" onClick={spotify.toggle}>{p.paused ? "▶ Play" : "⏸ Pause"}</button>
+            <button className="kid-btn kid-btn-soft" aria-label="Next song" onClick={spotify.next}>⏭</button>
+          </>
+        )}
+      </div>
+      {!uri && <div className="slide-caption mt-3">Paste a Spotify playlist link in the editor.</div>}
+      {p.error && <div className="slide-caption mt-3 text-destructive">{p.error}</div>}
     </div>
   );
 }
