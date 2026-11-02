@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from "react";
 import sunset from "@/assets/bg-hero-sunset.jpg";
 import sky from "@/assets/bg-hero-sky.jpg";
 import night from "@/assets/bg-hero-night.jpg";
@@ -49,7 +49,7 @@ export function SlideView({ data, names, thumb = false }: { data: SlideData; nam
   if (theme.font) vars["--subject-font"] = `"${theme.font}", sans-serif`;
   const card = theme.card ?? "left";
   return (
-    <div data-subject={subject.key} data-card={card} className="slide-content subject-slide bg-background font-body" style={vars as React.CSSProperties}>
+    <div data-subject={subject.key} data-card={card} className="slide-content subject-slide bg-background font-body" style={vars as CSSProperties}>
       {!img && <div className="absolute inset-0 paper-dots" />}
       <div className="subject-wash" />
       <div className="subject-layout">
