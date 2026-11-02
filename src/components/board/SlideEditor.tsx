@@ -7,6 +7,7 @@ import { BACKGROUNDS, WORK_SYMBOLS, newWidget, type Slide, type Widget } from "@
 import { SUBJECT_DESIGNS, subjectData, subjectDesign, type SubjectKey } from "@/lib/subject-design";
 import { artFor } from "@/lib/art";
 import { AiDraftPanel, SubjectThemePanel } from "./SubjectTools";
+import { SpotifySetup } from "./SpotifySetup";
 
 const WIDGET_TYPES: { type: Widget["type"]; label: string }[] = [
   { type: "sequence", label: "Timer sequence" },
@@ -110,7 +111,12 @@ function WidgetFields({ w, onChange }: { w: Widget; onChange: (w: Widget) => voi
       </div>
     );
   if (w.type === "spotify")
-    return <Input placeholder="https://open.spotify.com/playlist/..." value={w.url} onChange={(e) => onChange({ ...w, url: e.target.value })} />;
+    return (
+      <div className="space-y-2">
+        <Input placeholder="https://open.spotify.com/playlist/..." value={w.url} onChange={(e) => onChange({ ...w, url: e.target.value })} />
+        <SpotifySetup />
+      </div>
+    );
   if (w.type === "symbols")
     return (
       <div className="flex flex-wrap gap-1.5">

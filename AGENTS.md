@@ -15,3 +15,4 @@
 - Resolve subject presentation in src/lib/subject-design.ts from folder/day or legacy headings; keep matching artwork and CSS themes separate from saved schedule data so existing boards gain subject designs without migration.
 - Per-subject default themes (background, card placement, font, colors) are saved in the signed-in user's auth metadata and sanitized by src/lib/subject-theme.ts — cross-device without a database change, and never used for permissions.
 - AI slide drafting runs in an authenticated server function (src/lib/draft.functions.ts) so the AI key stays on the server.
+- Spotify Premium playback uses browser-only PKCE sign-in (teacher's own Spotify app Client ID, no secret) and one shared Web Playback SDK player in src/lib/spotify.ts — there is no Spotify connector, and a singleton avoids duplicate players in editor and present mode.
