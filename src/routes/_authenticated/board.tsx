@@ -213,7 +213,7 @@ function Board() {
 
       {presenting && <Presenter slides={slides} idx={idx} names={names} go={go} onExit={() => { setPresenting(false); if (document.fullscreenElement) document.exitFullscreen(); }} />}
 
-      <FloatingLayer assessment={isAssessment(current.data)} />
+      <FloatingLayer assessment={isAssessment(current.data)} names={names} />
       <ImportDialog open={importOpen} onOpenChange={setImportOpen} onImport={importBoards} />
 
       <Dialog open={rosterOpen} onOpenChange={setRosterOpen}>
