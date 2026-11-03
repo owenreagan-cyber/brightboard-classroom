@@ -14,8 +14,40 @@ export const setClientId = (id: string) => localStorage.setItem(K.cid, id.trim()
 
 /** "https://open.spotify.com/playlist/abc?si=1" → "spotify:playlist:abc" */
 export function spotifyContextUri(url: string): string | null {
-  const m = url.match(/open\.spotify\.com\/(?:intl-[a-z]+\/)?(playlist|album)\/([A-Za-z0-9]+)/) ?? url.match(/^spotify:(playlist|album):([A-Za-z0-9]+)$/);
+  const m = url.match(/open\.spotify\.com\/(?:intl-[a-z]+\/)?(playlist|album|artist)\/([A-Za-z0-9]+)/) ?? url.match(/^spotify:(playlist|album|artist):([A-Za-z0-9]+)$/);
   return m ? `spotify:${m[1]}:${m[2]}` : null;
+}
+
+/** Classroom music library — resolved via Spotify search at play time, so no hard-coded IDs go stale. */
+export type LibraryItem = { id: string; label: string; emoji: string; group: string; query: string; kind: "artist" | "playlist" };
+export const MUSIC_LIBRARY: LibraryItem[] = [
+  { id: "brooklyn-duo", label: "Brooklyn Duo", emoji: "🎻", group: "Acoustic covers", query: "Brooklyn Duo", kind: "artist" },
+  { id: "piano-guys", label: "The Piano Guys", emoji: "🎹", group: "Acoustic covers", query: "The Piano Guys", kind: "artist" },
+  { id: "vitamin-string", label: "Vitamin String Quartet", emoji: "🎻", group: "Acoustic covers", query: "Vitamin String Quartet", kind: "artist" },
+  { id: "2cellos", label: "2CELLOS", emoji: "🎶", group: "Acoustic covers", query: "2CELLOS", kind: "artist" },
+  { id: "kurt-hugo", label: "Kurt Hugo Schneider", emoji: "🎸", group: "Acoustic covers", query: "Kurt Hugo Schneider", kind: "artist" },
+  { id: "classical-kids", label: "Classical for kids", emoji: "🧒", group: "Classical", query: "classical music for kids", kind: "playlist" },
+  { id: "classical-focus", label: "Classical focus", emoji: "📚", group: "Classical", query: "classical focus study", kind: "playlist" },
+  { id: "mozart", label: "Mozart", emoji: "🎼", group: "Classical", query: "Wolfgang Amadeus Mozart", kind: "artist" },
+  { id: "bach", label: "Bach", emoji: "🎼", group: "Classical", query: "Johann Sebastian Bach", kind: "artist" },
+  { id: "calm-piano", label: "Calm piano", emoji: "🌙", group: "Calm & acoustic", query: "peaceful piano", kind: "playlist" },
+  { id: "acoustic-chill", label: "Acoustic chill", emoji: "🪕", group: "Calm & acoustic", query: "acoustic chill instrumental", kind: "playlist" },
+  { id: "anime-piano", label: "Anime piano", emoji: "⚡", group: "Calm & acoustic", query: "anime piano instrumental", kind: "playlist" },
+];
+
+const resolved = new Map<string, string>();
+export async function resolveLibraryItem(item: LibraryItem): Promise<string> {
+  const hit = resolved.get(item.id);
+  if (hit) return hit;
+  const r = await fetch(`https://api.spotify.com/v1/search?type=${item.kind}&limit=1&q=${encodeURIComponent(item.query)}`, {
+    headers: { Authorization: `Bearer ${await accessToken()}` },
+  });
+  if (!r.ok) throw new Error(`Couldn't find ${item.label} on Spotify`);
+  const j = await r.json();
+  const uri = (item.kind === "artist" ? j.artists?.items : j.playlists?.items)?.find(Boolean)?.uri as string | undefined;
+  if (!uri) throw new Error(`Couldn't find ${item.label} on Spotify`);
+  resolved.set(item.id, uri);
+  return uri;
 }
 
 const b64url = (buf: ArrayBuffer | Uint8Array) =>
