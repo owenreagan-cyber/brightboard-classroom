@@ -7,7 +7,8 @@ import {
   stepStartLabel,
   type Widget,
 } from "@/lib/board";
-import { initSpotifyPlayer, spotify, spotifyContextUri, useSpotifyConnected, useSpotifyPlayer } from "@/lib/spotify";
+import { initSpotifyPlayer, MUSIC_LIBRARY, resolveLibraryItem, spotify, spotifyContextUri, useSpotifyConnected, useSpotifyPlayer } from "@/lib/spotify";
+import { toast } from "sonner";
 
 function useNow(ms = 1000) {
   const [now, setNow] = useState(() => new Date());
@@ -228,7 +229,22 @@ function SpotifyPremium({ url }: { url: string }) {
           </>
         )}
       </div>
-      {!uri && <div className="slide-caption mt-3">Paste a Spotify playlist link in the editor.</div>}
+      {p.contextUri && !onPlaylist && (
+        <div className="mt-4 flex flex-wrap gap-4">
+          <button className="kid-btn kid-btn-soft" aria-label="Previous song" onClick={spotify.prev}>⏮</button>
+          <button className="kid-btn" onClick={spotify.toggle}>{p.paused ? "▶ Play" : "⏸ Pause"}</button>
+          <button className="kid-btn kid-btn-soft" aria-label="Next song" onClick={spotify.next}>⏭</button>
+        </div>
+      )}
+      <div className="slide-caption mt-6 text-muted-foreground">Music library</div>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {MUSIC_LIBRARY.map((item) => (
+          <button key={item.id} className="kid-btn kid-btn-soft" style={{ fontSize: "0.9em", padding: "0.4em 0.9em" }} disabled={p.status !== "ready"}
+            onClick={() => resolveLibraryItem(item).then((u) => spotify.playContext(u, true)).catch((e) => toast.error(e.message))}>
+            {item.emoji} {item.label}
+          </button>
+        ))}
+      </div>
       {p.error && <div className="slide-caption mt-3 text-destructive">{p.error}</div>}
     </div>
   );
