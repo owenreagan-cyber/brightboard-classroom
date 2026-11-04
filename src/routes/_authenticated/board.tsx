@@ -1,3 +1,4 @@
+import { CLASSES, DEFAULT_ROSTERS, classFor, displayNames, type ClassName } from "@/lib/rosters";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -36,8 +37,8 @@ function Board() {
   const navigate = useNavigate({ from: "/board" });
   const { slide: slideParam } = Route.useSearch();
   const [slides, setSlides] = useState<Slide[] | null>(null);
-  const [names, setNames] = useState<string[]>([]);
-  const [rosterId, setRosterId] = useState<string | null>(null);
+  const [rosters, setRosters] = useState<Record<string, { id: string; students: string[] }>>({});
+  const [rosterClass, setRosterClass] = useState<ClassName>("Homeroom");
   const [rosterOpen, setRosterOpen] = useState(false);
   const [rosterText, setRosterText] = useState("");
   const [presenting, setPresenting] = useState(false);
@@ -61,8 +62,15 @@ function Board() {
         rows = ins.data as unknown as Slide[];
       }
       setSlides(rows);
-      const r = await supabase.from("rosters").select("id, students").limit(1).maybeSingle();
-      if (r.data) { setRosterId(r.data.id); setNames(r.data.students); }
+      const r = await supabase.from("rosters").select("id, name, students");
+      const map: Record<string, { id: string; students: string[] }> = {};
+      (r.data ?? []).forEach((x) => { map[x.name] = { id: x.id, students: x.students }; });
+      const missing = CLASSES.filter((c) => !map[c]);
+      if (missing.length) {
+        const ins = await supabase.from("rosters").insert(missing.map((c) => ({ name: c, students: DEFAULT_ROSTERS[c] }))).select("id, name, students");
+        (ins.data ?? []).forEach((x) => { map[x.name] = { id: x.id, students: x.students }; });
+      }
+      setRosters(map);
     })();
   }, []);
 
@@ -145,12 +153,12 @@ function Board() {
 
   const saveRoster = async () => {
     const list = rosterText.split("\n").map((n) => n.trim()).filter(Boolean);
-    const res = rosterId
-      ? await supabase.from("rosters").update({ students: list }).eq("id", rosterId).select("id").single()
-      : await supabase.from("rosters").insert({ students: list }).select("id").single();
+    const existing = rosters[rosterClass];
+    const res = existing
+      ? await supabase.from("rosters").update({ students: list }).eq("id", existing.id).select("id").single()
+      : await supabase.from("rosters").insert({ name: rosterClass, students: list }).select("id").single();
     if (res.error) { toast.error(res.error.message); return; }
-    setRosterId(res.data.id);
-    setNames(list);
+    setRosters({ ...rosters, [rosterClass]: { id: res.data.id, students: list } });
     setRosterOpen(false);
     toast.success(`Saved ${list.length} students`);
   };
@@ -162,6 +170,8 @@ function Board() {
 
   if (!slides) return <div className="flex min-h-screen items-center justify-center font-display text-2xl text-primary">Loading your board…</div>;
   const current = slides[idx]!;
+  const names = displayNames(rosters[classFor(current.data.folder)]?.students ?? []);
+  const openRoster = (c: ClassName) => { setRosterClass(c); setRosterText((rosters[c]?.students ?? []).join("\n")); };
 
   return (
     <div className="flex h-screen flex-col bg-secondary">
@@ -172,7 +182,7 @@ function Board() {
           <Button variant="outline" onClick={() => setImportOpen(true)}><Upload className="h-4 w-4" /> Import JSON</Button>
           <Button variant="outline" onClick={() => download(`${current.title}.json`, JSON.stringify({ version: 1, boards: [toBoardJson(current)] }, null, 2))}><Download className="h-4 w-4" /> Export board</Button>
           <Button variant="outline" onClick={() => download("hero-board-library.json", exportLibrary(slides))}><Download className="h-4 w-4" /> Export library</Button>
-          <Button variant="outline" onClick={() => { setRosterText(names.join("\n")); setRosterOpen(true); }}><Users className="h-4 w-4" /> Class list</Button>
+          <Button variant="outline" onClick={() => { openRoster(classFor(current.data.folder)); setRosterOpen(true); }}><Users className="h-4 w-4" /> Class list</Button>
           <Button onClick={() => { setPresenting(true); document.documentElement.requestFullscreen?.().catch(() => {}); }}><Play className="h-4 w-4" /> Present</Button>
           <Button variant="ghost" size="icon" aria-label="Sign out" onClick={signOut}><LogOut className="h-4 w-4" /></Button>
         </div>
@@ -219,9 +229,10 @@ function Board() {
       <Dialog open={rosterOpen} onOpenChange={setRosterOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Class list</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">One student name per line. Used by the name picker.</p>
+          <div className="flex gap-2">{CLASSES.map((c) => <Button key={c} size="sm" variant={c === rosterClass ? "default" : "outline"} onClick={() => openRoster(c)}>{c}</Button>)}</div>
+          <p className="text-sm text-muted-foreground">One full name per line. Reading and Math boards use their own list; all other boards use Homeroom. Pickers show first names (full names when two share a first name).</p>
           <Textarea rows={12} value={rosterText} onChange={(e) => setRosterText(e.target.value)} placeholder={"Ava\nLiam\nMia"} />
-          <Button onClick={saveRoster}>Save class list</Button>
+          <Button onClick={saveRoster}>Save {rosterClass} list</Button>
         </DialogContent>
       </Dialog>
     </div>
