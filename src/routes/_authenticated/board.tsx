@@ -1,4 +1,4 @@
-import { CLASSES, DEFAULT_ROSTERS, classFor, displayNames, type ClassName } from "@/lib/rosters";
+import { CLASSES, DEFAULT_ROSTERS, classFor, displayNames, upgradeRoster, type ClassName } from "@/lib/rosters";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -69,6 +69,10 @@ function Board() {
       if (missing.length) {
         const ins = await supabase.from("rosters").insert(missing.map((c) => ({ name: c, students: DEFAULT_ROSTERS[c] }))).select("id, name, students");
         (ins.data ?? []).forEach((x) => { map[x.name] = { id: x.id, students: x.students }; });
+      }
+      for (const c of CLASSES) {
+        const up = map[c] && upgradeRoster(c, map[c].students);
+        if (up && map[c]) { await supabase.from("rosters").update({ students: up }).eq("id", map[c].id); map[c] = { ...map[c], students: up }; }
       }
       setRosters(map);
     })();

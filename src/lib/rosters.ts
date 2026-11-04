@@ -3,8 +3,8 @@ export const CLASSES = ["Homeroom", "Reading", "Math"] as const;
 export type ClassName = (typeof CLASSES)[number];
 
 export const DEFAULT_ROSTERS: Record<ClassName, string[]> = {
-  Homeroom: ["Hannah Bradshaw", "Magnus Yoder", "Jasmin Brar", "Isaiah Snapp", "Teagan Donahue", "Tito Flynn", "Sophia Garcia", "Timothy Imafidon", "Charlotte Laub", "Liam Port Ward", "Faith Leitzke", "Alex Lumley", "Caroline Overby", "Cole Majoros", "Patricie Passler", "Jay McWhorter", "Ava Venne", "Nick Meucci", "Lux Wicker", "Thaddeus Pinette"],
-  Reading: ["Adadine Strevens", "Anna Moore", "Bowie Flynn", "Cara Roberts", "Dior Mosley", "Ellie Ashley", "Freddy Giler", "Ian Gibb", "Nathaniel Clark", "Pradyun Daparthi", "Praram Prajapati", "Roger Lewis", "Trey Sullivan", "Tyler Fuhs", "Aaron Long", "Grace Spindler", "Alexander Lumley", "Easton Rose", "Eli Schiess", "Emma Cullingford", "Emory Schinke", "Finley Murph", "George Wood", "Grady Narron", "Hudson Baugh", "Jaxon Lawson", "Kayleigh Sutton", "Lincoln Thomas", "Lucy Antar", "Mason Henry", "Max Nasiatka", "Dior Mosley", "Sophia Suarez", "Treyson Bledsoe", "William Monday", "Sophia Seaman"],
+  Homeroom: ["Hannah Bradshaw", "Jasmin Brar", "Teagan Donahue", "Tito Flynn", "Sophia Garcia", "Timothy Imafidon", "Charlotte Laub", "Faith Leitzke", "Alex Lumley", "Cole Majoros", "Jay McWhorter", "Nick Meucci", "Caroline Overby", "Patricie Passler", "Thaddeus Pinette", "Liam Port Ward", "Ava Venne", "Lux Wicker", "Magnus Yoder", "Isaiah Snapp"],
+  Reading: ["Aaron Long", "Grace Spindler", "Alexander Lumley", "Easton Rose", "Eli Schiess", "Emma Cullingford", "Emory Schinke", "Finley Murph", "George Wood", "Grady Narron", "Hudson Baugh", "Jaxon Lawson", "Kayleigh Sutton", "Lincoln Thomas", "Lucy Antar", "Mason Henry", "Max Nasiatka", "Dior Mosley", "Sophia Suarez", "Treyson Bledsoe", "William Monday", "Sophia Seaman"],
   Math: ["Adaline Strevens", "Anna Moore", "Bowie Flynn", "Cara Roberts", "Dior Mosley", "Ellie Ashley", "Freddy Giler", "Ian Gibb", "Nathaniel Clark", "Pradyun Daparthi", "Praram Prajapati", "Roger Lewis", "Trey Sullivan", "Tyler Fuhs"],
 };
 
@@ -20,4 +20,12 @@ export function displayNames(full: string[]): string[] {
   const count = new Map<string, number>();
   list.forEach((n) => count.set(first(n), (count.get(first(n)) ?? 0) + 1));
   return list.map((n) => (count.get(first(n))! > 1 ? n : first(n)));
+}
+
+/** Earlier built-in Reading list (it wrongly mixed in the Math group); saved copies of it are upgraded on load. */
+export const OLD_READING = ["Adadine Strevens", "Anna Moore", "Bowie Flynn", "Cara Roberts", "Dior Mosley", "Ellie Ashley", "Freddy Giler", "Ian Gibb", "Nathaniel Clark", "Pradyun Daparthi", "Praram Prajapati", "Roger Lewis", "Trey Sullivan", "Tyler Fuhs", "Aaron Long", "Grace Spindler", "Alexander Lumley", "Easton Rose", "Eli Schiess", "Emma Cullingford", "Emory Schinke", "Finley Murph", "George Wood", "Grady Narron", "Hudson Baugh", "Jaxon Lawson", "Kayleigh Sutton", "Lincoln Thomas", "Lucy Antar", "Mason Henry", "Max Nasiatka", "Dior Mosley", "Sophia Suarez", "Treyson Bledsoe", "William Monday", "Sophia Seaman"];
+
+/** Saved list to use: replaces an untouched copy of an outdated built-in list. */
+export function upgradeRoster(c: ClassName, saved: string[]): string[] | null {
+  return c === "Reading" && saved.join("|") === OLD_READING.join("|") ? DEFAULT_ROSTERS.Reading : null;
 }
