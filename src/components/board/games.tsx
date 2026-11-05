@@ -1,15 +1,43 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   TIER_INFO, decideStar, loadState, newPrizeBoard, newRng, newStar, pickStar, pickTile, remaining, roll, setRange, undoRoll, undoStar, undoTile,
   type PrizeState, type RngState, type StarState, type Tier,
 } from "@/lib/games";
 
-/** State saved in this browser so it survives refreshes. */
-function usePersisted<T>(key: string, fallback: () => T, valid: (v: unknown) => boolean) {
-  const [s, set] = useState<T>(fallback);
+/** State saved in this browser and, when cloud is set, in the teacher's account so it follows them across devices. */
+function usePersisted<T>(key: string, fallback: () => T, valid: (v: unknown) => boolean, cloud = false) {
+  const [s, setRaw] = useState<T>(fallback);
   const [ready, setReady] = useState(false);
-  useEffect(() => { set(loadState(key, fallback, valid)); setReady(true); }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  const dirty = useRef(false);
+  useEffect(() => { setRaw(loadState(key, fallback, valid)); setReady(true); }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (ready) localStorage.setItem(key, JSON.stringify(s)); }, [key, s, ready]);
+  // Pull the cloud copy on open and whenever the tab regains focus.
+  useEffect(() => {
+    if (!cloud) return;
+    const pull = async () => {
+      const { data } = await supabase.auth.getUser();
+      const v = (data.user?.user_metadata?.["games"] as Record<string, unknown> | undefined)?.[key];
+      if (v !== undefined && valid(v) && !dirty.current) setRaw(v as T);
+    };
+    void pull();
+    const onFocus = () => void pull();
+    window.addEventListener("focus", onFocus);
+    const t = window.setInterval(pull, 15000);
+    return () => { window.removeEventListener("focus", onFocus); window.clearInterval(t); };
+  }, [key, cloud]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Push local changes (debounced).
+  useEffect(() => {
+    if (!cloud || !dirty.current) return;
+    const t = window.setTimeout(async () => {
+      const { data } = await supabase.auth.getUser();
+      const games = { ...((data.user?.user_metadata?.["games"] as Record<string, unknown>) ?? {}), [key]: s };
+      await supabase.auth.updateUser({ data: { games } });
+      dirty.current = false;
+    }, 600);
+    return () => window.clearTimeout(t);
+  }, [key, s, cloud]);
+  const set = (v: T) => { dirty.current = true; setRaw(v); };
   return [s, set] as const;
 }
 const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object";
@@ -47,7 +75,7 @@ export function RandomNumber() {
 }
 
 export function MysteryStar({ names }: { names: string[] }) {
-  const [s, set] = usePersisted<StarState>("hb-star", newStar, (v) => isObj(v) && Array.isArray(v["log"]));
+  const [s, set] = usePersisted<StarState>("hb-star", newStar, (v) => isObj(v) && Array.isArray(v["log"]), true);
   const last = s.log[s.log.length - 1];
   return (
     <div className="space-y-3 text-center">
@@ -86,7 +114,7 @@ const TIER_STYLE: Record<Tier, string> = {
 };
 
 export function PrizeBoard() {
-  const [s, set] = usePersisted<PrizeState>("hb-prize", () => newPrizeBoard(), (v) => isObj(v) && Array.isArray(v["tiles"]) && v["tiles"].length === 100 && Array.isArray(v["picked"]));
+  const [s, set] = usePersisted<PrizeState>("hb-prize", () => newPrizeBoard(), (v) => isObj(v) && Array.isArray(v["tiles"]) && v["tiles"].length === 100 && Array.isArray(v["picked"]), true);
   const [shown, setShown] = useState<Tier | null>(null);
   const [confirm, setConfirm] = useState(false);
   return (
