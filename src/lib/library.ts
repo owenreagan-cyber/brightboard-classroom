@@ -124,3 +124,19 @@ export function toBoardJson(s: Slide): BoardJson {
   return { title: s.title, folder, day, heading, body, bg, backgroundStyle, widgets: widgets.map(({ id: _id, ...w }) => w) as BoardJson["widgets"] };
 }
 export const exportLibrary = (slides: Slide[]) => JSON.stringify({ version: 1, boards: slides.map(toBoardJson) }, null, 2);
+
+export const fmtTime = (m: number) => { const h = Math.floor(m / 60), mm = m % 60; return `${((h + 11) % 12) + 1}:${String(mm).padStart(2, "0")}`; };
+
+/** Week planner: for each bell block and weekday, the boards filed there (legacy folders included). */
+export function weekGrid(slides: Slide[]) {
+  return BLOCKS.map((b) => ({
+    ...b,
+    time: `${fmtTime(b.from)}–${fmtTime(b.to)}`,
+    folder: b.folders[0]!,
+    cells: DAYS.map((day) => ({
+      day,
+      label: b.folders[0] === "Specials" ? specialFor(day) : b.folders.filter((f) => !(LEGACY_FOLDERS as readonly string[]).includes(f)).join(" / "),
+      slides: slides.filter((s) => s.data.day === day && s.data.folder && (b.folders as readonly string[]).includes(s.data.folder)),
+    })),
+  }));
+}

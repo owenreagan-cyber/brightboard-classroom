@@ -60,3 +60,19 @@ describe("JSON import", () => {
     expect(again.ok).toBe(true);
   });
 });
+
+import { weekGrid as wg } from "./library";
+describe("weekGrid", () => {
+  const mk = (folder: string, day: string) => ({ id: folder + day, position: 0, title: "x", data: { heading: "", body: "", bg: "sky", widgets: [], folder, day } }) as never;
+  it("shows each day's special at 1:50", () => {
+    const sp = wg([]).find((b) => b.folder === "Specials")!;
+    expect(sp.time).toBe("1:50–2:35");
+    expect(sp.cells.map((c) => c.label)).toEqual(["Music", "P.E.", "Art", "Industrial Arts", "Latin"]);
+  });
+  it("places boards by folder and day, History and Science share 1:15", () => {
+    const g = wg([mk("Math", "Tue"), mk("Science", "Wed"), mk("History", "Wed"), mk("Assessments", "Mon")]);
+    expect(g.find((b) => b.folder === "Math")!.cells[1]!.slides).toHaveLength(1);
+    expect(g.find((b) => b.folder === "History")!.cells[2]!.slides).toHaveLength(2);
+    expect(g.flatMap((b) => b.cells.flatMap((c) => c.slides)).some((s: { id: string }) => s.id === "AssessmentsMon")).toBe(false);
+  });
+});

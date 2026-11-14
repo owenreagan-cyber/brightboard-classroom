@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as SpotifyCallbackRouteImport } from './routes/spotify-callback'
 import { Route as AuthenticatedBoardRouteImport } from './routes/_authenticated/board'
+import { Route as AuthenticatedScheduleRouteImport } from './routes/_authenticated/schedule'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -33,16 +34,23 @@ const AuthenticatedBoardRoute = AuthenticatedBoardRouteImport.update({
   path: '/board',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedScheduleRoute = AuthenticatedScheduleRouteImport.update({
+  id: '/schedule',
+  path: '/schedule',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/spotify-callback': typeof SpotifyCallbackRoute
   '/board': typeof AuthenticatedBoardRoute
+  '/schedule': typeof AuthenticatedScheduleRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/spotify-callback': typeof SpotifyCallbackRoute
   '/board': typeof AuthenticatedBoardRoute
+  '/schedule': typeof AuthenticatedScheduleRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -50,18 +58,20 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/spotify-callback': typeof SpotifyCallbackRoute
   '/_authenticated/board': typeof AuthenticatedBoardRoute
+  '/_authenticated/schedule': typeof AuthenticatedScheduleRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/spotify-callback' | '/board'
+  fullPaths: '/' | '/spotify-callback' | '/board' | '/schedule'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/spotify-callback' | '/board'
+  to: '/' | '/spotify-callback' | '/board' | '/schedule'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/spotify-callback'
     | '/_authenticated/board'
+    | '/_authenticated/schedule'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -100,15 +110,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBoardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/schedule': {
+      id: '/_authenticated/schedule'
+      path: '/schedule'
+      fullPath: '/schedule'
+      preLoaderRoute: typeof AuthenticatedScheduleRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBoardRoute: typeof AuthenticatedBoardRoute
+  AuthenticatedScheduleRoute: typeof AuthenticatedScheduleRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBoardRoute: AuthenticatedBoardRoute,
+  AuthenticatedScheduleRoute: AuthenticatedScheduleRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

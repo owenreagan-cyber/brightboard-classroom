@@ -1,8 +1,8 @@
 import { CLASSES, DEFAULT_ROSTERS, classFor, displayNames, upgradeRoster, type ClassName } from "@/lib/rosters";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Check, ChevronLeft, ChevronRight, Copy, Download, Layers, Upload, LogOut, Play, Plus, Trash2, Users, X } from "lucide-react";
+import { CalendarDays, Check, ChevronLeft, ChevronRight, Copy, Download, Layers, Upload, LogOut, Play, Plus, Trash2, Users, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -183,6 +183,7 @@ function Board() {
         <img src={mascot} alt="" width={40} height={40} className="h-10 w-10" />
         <span className="font-display text-xl text-primary">Hero Board</span>
         <div className="ml-auto flex flex-wrap gap-2">
+          <Button asChild variant="outline"><Link to="/schedule"><CalendarDays className="h-4 w-4" /> Schedule</Link></Button>
           <Button variant="outline" onClick={() => setImportOpen(true)}><Upload className="h-4 w-4" /> Import JSON</Button>
           <Button variant="outline" onClick={() => download(`${current.title}.json`, JSON.stringify({ version: 1, boards: [toBoardJson(current)] }, null, 2))}><Download className="h-4 w-4" /> Export board</Button>
           <Button variant="outline" onClick={() => download("hero-board-library.json", exportLibrary(slides))}><Download className="h-4 w-4" /> Export library</Button>
