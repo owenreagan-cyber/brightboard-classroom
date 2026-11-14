@@ -30,6 +30,35 @@ export const BLOCKS: { folders: Exclude<Folder, "Assessments">[]; from: number; 
   { folders: ["Dismissal"], from: t(14, 40), to: t(15, 5) },
 ];
 
+export type Block = (typeof BLOCKS)[number];
+/** Teacher's edited times, keyed by the block's first folder (minutes since midnight). */
+export type BlockTimes = Record<string, { from: number; to: number }>;
+
+/** School bell schedule with the teacher's edits applied, sorted by start time. Bad edits are ignored. */
+export function effectiveBlocks(over: BlockTimes = {}): Block[] {
+  return BLOCKS.map((b) => {
+    const o = over[b.folders[0]!];
+    return o && Number.isFinite(o.from) && Number.isFinite(o.to) && o.from >= 0 && o.to <= 24 * 60 && o.from < o.to ? { ...b, from: o.from, to: o.to } : b;
+  }).sort((a, b) => a.from - b.from);
+}
+export function cleanBlockTimes(v: unknown): BlockTimes {
+  if (!v || typeof v !== "object") return {};
+  const out: BlockTimes = {};
+  for (const [k, t] of Object.entries(v as Record<string, { from?: unknown; to?: unknown }>)) {
+    if (BLOCKS.some((b) => b.folders[0] === k) && typeof t?.from === "number" && typeof t?.to === "number") out[k] = { from: t.from, to: t.to };
+  }
+  return out;
+}
+let customTimes: BlockTimes = {};
+let offDays = new Set<Day>();
+export const setBlockTimes = (t: BlockTimes) => { customTimes = t; };
+export const activeBlocks = () => effectiveBlocks(customTimes);
+/** Days the teacher's calendar marks as no school; nothing is suggested then. */
+export const setOffDays = (d: Day[]) => { offDays = new Set(d); };
+export const isDayOff = (d: Day) => offDays.has(d);
+export const parseHM = (s: string) => { const m = s.match(/^(\d{1,2}):(\d{2})$/); return m ? +m[1]! * 60 + +m[2]! : NaN; };
+export const toHM = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+
 export const isAssessment = (d: SlideData) => d.folder === "Assessments";
 
 /** Strip games (picker, music) for Assessment Mode. */
@@ -43,17 +72,17 @@ export function dayOf(now: Date): Day | null {
 }
 
 /** The board to suggest right now, plus the following block's board for "Next". */
-export function suggest(slides: Slide[], now: Date): { current: Slide | null; next: Slide | null } {
+export function suggest(slides: Slide[], now: Date, blocks: Block[] = activeBlocks()): { current: Slide | null; next: Slide | null } {
   const day = dayOf(now);
-  if (!day) return { current: null, next: null };
+  if (!day || isDayOff(day)) return { current: null, next: null };
   const mins = now.getHours() * 60 + now.getMinutes();
   const find = (folders: readonly Folder[]) => {
     for (const f of folders) { const hit = slides.find((s) => s.data.folder === f && s.data.day === day && !s.data.staged); if (hit) return hit; }
     return null;
   };
-  const i = BLOCKS.findIndex((b) => mins >= b.from && mins < b.to);
-  const nextBlock = i >= 0 ? BLOCKS[i + 1] : BLOCKS.find((b) => b.from > mins);
-  return { current: i >= 0 ? find(BLOCKS[i]!.folders) : null, next: nextBlock ? find(nextBlock.folders) : null };
+  const i = blocks.findIndex((b) => mins >= b.from && mins < b.to);
+  const nextBlock = i >= 0 ? blocks[i + 1] : blocks.find((b) => b.from > mins);
+  return { current: i >= 0 ? find(blocks[i]!.folders) : null, next: nextBlock ? find(nextBlock.folders) : null };
 }
 
 /** Copy widgets + layout (bg, heading, body) from source to every other day in the same folder. */
@@ -81,6 +110,7 @@ const widget = z.discriminatedUnion("type", [
   z.object({ type: z.literal("symbols"), symbols: z.array(z.string()) }),
   z.object({ type: z.literal("spotify"), url: z.string() }),
   z.object({ type: z.literal("clock") }),
+  z.object({ type: z.literal("lesson"), subject: z.string() }),
 ]);
 export const BoardSchema = z.object({
   title: z.string().min(1),
@@ -128,8 +158,8 @@ export const exportLibrary = (slides: Slide[]) => JSON.stringify({ version: 1, b
 export const fmtTime = (m: number) => { const h = Math.floor(m / 60), mm = m % 60; return `${((h + 11) % 12) + 1}:${String(mm).padStart(2, "0")}`; };
 
 /** Week planner: for each bell block and weekday, the boards filed there (legacy folders included). */
-export function weekGrid(slides: Slide[]) {
-  return BLOCKS.map((b) => ({
+export function weekGrid(slides: Slide[], blocks: Block[] = activeBlocks()) {
+  return blocks.map((b) => ({
     ...b,
     time: `${fmtTime(b.from)}–${fmtTime(b.to)}`,
     folder: b.folders[0]!,

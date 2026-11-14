@@ -1,12 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Lock, Plus } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Clock, Lock, Plus, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ScaledSlide, SlideView } from "@/components/board/SlideView";
 import { StagedBadge } from "@/components/board/Library";
-import { DAYS, dayOf, weekGrid, type Day, type Folder } from "@/lib/library";
+import { DAYS, dayOf, parseHM, toHM, weekGrid, type BlockTimes, type Day, type Folder } from "@/lib/library";
+import { Input } from "@/components/ui/input";
+import { eventsOn, offDaysFor, weekDates, weekStart, type CalEvent } from "@/lib/calendar";
+import { CANVAS_SUBJECTS, applyOffDays, defaultCourses, loadAgendas, loadSettings, loadWeekEvents, saveBlockTimes, saveCourses, type CourseMap, type WeekAgendas } from "@/lib/school-sync";
 import { CLASSES, DEFAULT_ROSTERS, classFor, displayNames, type ClassName } from "@/lib/rosters";
 import { artFor } from "@/lib/art";
 import type { Slide, SlideData } from "@/lib/board";
@@ -32,6 +35,47 @@ function Schedule() {
   const [now, setNow] = useState<Date | null>(null);
   const [focus, setFocus] = useState<Day | "week">("week");
   const [tab, setTab] = useState<ClassName>("Homeroom");
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [times, setTimes] = useState<BlockTimes>({});
+  const [editing, setEditing] = useState<string | null>(null);
+  const [draft, setDraft] = useState({ from: "", to: "" });
+  const [events, setEvents] = useState<CalEvent[]>([]);
+  const [calError, setCalError] = useState<string>();
+  const [courses, setCourses] = useState<CourseMap>({});
+  const [allCourses, setAllCourses] = useState<{ id: number; name: string }[]>([]);
+  const [agendas, setAgendas] = useState<WeekAgendas>({});
+  const [canvasError, setCanvasError] = useState<string>();
+  const [syncing, setSyncing] = useState(false);
+  const [tick, setTick] = useState(0);
+
+  const monday = (() => { const m = weekStart(now ?? new Date()); m.setDate(m.getDate() + weekOffset * 7); return m; })();
+  const mondayKey = monday.toDateString();
+
+  useEffect(() => {
+    (async () => {
+      const st = await loadSettings();
+      setTimes(st.times);
+      const d = await defaultCourses();
+      setAllCourses(d.all);
+      if (d.error) setCanvasError(d.error);
+      setCourses(st.courses ?? d.courses);
+    })();
+    const t = setInterval(() => setTick((x) => x + 1), 5 * 60_000);
+    return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    if (!now) return;
+    let live = true;
+    setSyncing(true);
+    const fresh = tick > 0;
+    Promise.all([
+      loadWeekEvents(monday).then((r) => { if (!live) return; setEvents(r.events); setCalError(r.error); if (weekOffset === 0) applyOffDays(r.events, monday); }),
+      Object.keys(courses).length ? loadAgendas(courses, weekDates(monday)[0]!, fresh).then((r) => { if (!live) return; setAgendas(r.agendas); setCanvasError(r.error); }) : Promise.resolve(),
+    ]).finally(() => live && setSyncing(false));
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mondayKey, courses, tick, !!now]);
 
   useEffect(() => {
     setNow(new Date());
@@ -54,9 +98,27 @@ function Schedule() {
     if (error) { toast.error(error.message); return; }
     navigate({ to: "/board", search: { slide: slides.length + 1 } });
   };
-  const today = now ? dayOf(now) : null;
+  const today = now && weekOffset === 0 ? dayOf(now) : null;
   const mins = now ? now.getHours() * 60 + now.getMinutes() : -1;
-  const grid = weekGrid(slides);
+  const grid = weekGrid(slides, undefined);
+  const dates = weekDates(monday);
+  const dateOf = (d: Day) => dates[DAYS.indexOf(d)]!;
+  const off = offDaysFor(events, dates);
+  const isThisWeek = weekOffset === 0;
+  const saveTime = async (key: string) => {
+    const from = parseHM(draft.from), to = parseHM(draft.to);
+    if (!(from < to)) { toast.error("Start must be before end"); return; }
+    const next = { ...times, [key]: { from, to } };
+    const { error } = await saveBlockTimes(next);
+    if (error) { toast.error(error.message); return; }
+    setTimes(next); setEditing(null); toast.success("Time saved");
+  };
+  const resetTimes = async () => { await saveBlockTimes({}); setTimes({}); toast.success("Back to the school schedule"); };
+  const setCourse = async (subject: string, id: string) => {
+    const next = { ...courses }; if (id) next[subject] = +id; else delete next[subject];
+    setCourses(next); await saveCourses(next);
+  };
+  const lessonFor = (folder: string, d: Day) => agendas[folder]?.days[d];
   const days = focus === "week" ? [...DAYS] : [focus];
   const names = (c: ClassName) => rosters[c] ?? DEFAULT_ROSTERS[c];
   const assessments = slides.filter((s) => s.data.folder === "Assessments");
@@ -66,6 +128,12 @@ function Schedule() {
       <header className="flex flex-wrap items-center gap-3 border-b bg-card px-4 py-2">
         <Button asChild variant="outline" size="sm"><Link to="/board" search={{ slide: undefined }}><ArrowLeft className="h-4 w-4" /> Board</Link></Button>
         <h1 className="font-display text-xl text-primary">Class Schedule</h1>
+        <div className="flex items-center gap-1">
+          <Button size="icon" variant="outline" aria-label="Previous week" onClick={() => setWeekOffset(weekOffset - 1)}><ChevronLeft className="h-4 w-4" /></Button>
+          <span className="text-sm font-bold">{isThisWeek ? "This week" : weekOffset === 1 ? "Next week" : "Week of"} · {monday.toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
+          <Button size="icon" variant="outline" aria-label="Next week" onClick={() => setWeekOffset(weekOffset + 1)}><ChevronRight className="h-4 w-4" /></Button>
+          <Button size="sm" variant="ghost" onClick={() => setTick(tick + 1)} disabled={syncing}><RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} /> Sync</Button>
+        </div>
         <div className="ml-auto flex flex-wrap gap-1">
           <Button size="sm" variant={focus === "week" ? "default" : "outline"} onClick={() => setFocus("week")}>Week</Button>
           {DAYS.map((d) => <Button key={d} size="sm" variant={focus === d ? "default" : "outline"} onClick={() => setFocus(d)}>{d}{d === today ? " •" : ""}</Button>)}
@@ -77,7 +145,16 @@ function Schedule() {
             <thead>
               <tr>
                 <th className="w-40 p-2 text-left">Block</th>
-                {days.map((d) => <th key={d} className={`p-2 text-left font-display ${d === today ? "bg-accent text-accent-foreground" : ""}`}>{d}{d === today ? " (today)" : ""}</th>)}
+                {days.map((d) => <th key={d} className={`p-2 text-left font-display ${d === today ? "bg-accent text-accent-foreground" : ""}`}>{d} <span className="font-sans text-xs font-normal">{new Date(dateOf(d) + "T12:00").toLocaleDateString(undefined, { month: "numeric", day: "numeric" })}</span>{d === today ? " (today)" : ""}</th>)}
+              </tr>
+              <tr>
+                <td className="p-2 text-xs text-muted-foreground">Google Calendar</td>
+                {days.map((d) => (
+                  <td key={d} className={`p-2 align-top ${off.includes(d) ? "bg-destructive/10" : ""}`}>
+                    {eventsOn(events, dateOf(d)).filter((e) => e.allDay).map((e) => <div key={e.id} className="mb-1 rounded bg-accent px-2 py-0.5 text-xs font-bold text-accent-foreground">📅 {e.summary}</div>)}
+                    {off.includes(d) && <div className="text-xs font-bold text-destructive">No school — no boards suggested</div>}
+                  </td>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -90,7 +167,17 @@ function Schedule() {
                         {artFor({ folder: b.folder }) && <img src={artFor({ folder: b.folder })!} alt="" className="h-10 w-10 rounded-md border-2 border-foreground object-cover" />}
                         <div>
                           <div className="font-bold">{b.folder === "Specials" ? "Specials" : b.cells[0]!.label}</div>
-                          <div className="text-xs text-muted-foreground">{b.time}</div>
+                          {editing === b.folder ? (
+                            <div className="mt-1 flex flex-col gap-1">
+                              <Input type="time" aria-label="Start" className="h-8 w-28" value={draft.from} onChange={(e) => setDraft({ ...draft, from: e.target.value })} />
+                              <Input type="time" aria-label="End" className="h-8 w-28" value={draft.to} onChange={(e) => setDraft({ ...draft, to: e.target.value })} />
+                              <div className="flex gap-1"><Button size="sm" className="h-7" onClick={() => saveTime(b.folder)}>Save</Button><Button size="sm" variant="ghost" className="h-7" onClick={() => setEditing(null)}>Cancel</Button></div>
+                            </div>
+                          ) : (
+                            <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary" onClick={() => { setEditing(b.folder); setDraft({ from: toHM(b.from), to: toHM(b.to) }); }}>
+                              <Clock className="h-3 w-3" />{b.time}{times[b.folder] ? " ✎" : ""}
+                            </button>
+                          )}
                           {isNow && <span className="rounded-full bg-primary px-2 text-[10px] font-bold text-primary-foreground">NOW</span>}
                         </div>
                       </div>
@@ -98,6 +185,15 @@ function Schedule() {
                     {b.cells.filter((c) => days.includes(c.day)).map((c) => (
                       <td key={c.day} className={`p-2 align-top ${c.day === today ? "bg-accent/20" : ""}`}>
                         {b.folder === "Specials" && <div className="mb-1 flex items-center gap-1 text-xs font-bold"><img src={artFor({ folder: "Specials", day: c.day }) ?? ""} alt="" className="h-5 w-5 rounded" />{c.label}</div>}
+                        {eventsOn(events, dateOf(c.day)).filter((e) => !e.allDay && (() => { const t = new Date(e.start); const m = t.getHours() * 60 + t.getMinutes(); return m >= b.from && m < b.to; })()).map((e) => (
+                          <div key={e.id} className="mb-1 rounded bg-accent px-1 text-[11px] font-bold text-accent-foreground">📅 {new Date(e.start).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} {e.summary}</div>
+                        ))}
+                        {(lessonFor(b.folder, c.day)?.inClass.length || lessonFor(b.folder, c.day)?.atHome.length) ? (
+                          <div className="mb-1 rounded border border-primary/40 bg-primary/5 p-1 text-[11px]">
+                            <div className="font-bold">📚 {lessonFor(b.folder, c.day)!.lesson ?? "—"}</div>
+                            {lessonFor(b.folder, c.day)!.atHome.length > 0 && <div>🏠 {lessonFor(b.folder, c.day)!.atHome.join("; ")}</div>}
+                          </div>
+                        ) : null}
                         <div className="space-y-1">
                           {c.slides.map((s) => (
                             <button key={s.id} onClick={() => open(s)} className="block w-full max-w-48 rounded-lg p-1 text-left ring-1 ring-border hover:ring-primary">
@@ -127,7 +223,30 @@ function Schedule() {
             </div>
           </div>
         </div>
-        <aside className="w-full shrink-0 rounded-2xl border bg-card p-3 lg:w-72">
+        <aside className="w-full shrink-0 space-y-4 lg:w-72">
+          <div className="rounded-2xl border bg-card p-3 text-sm">
+            <h2 className="mb-1 font-display text-lg">Sync</h2>
+            <p className="text-xs text-muted-foreground">Dates and times use this computer's clock. Refreshes every 5 minutes.</p>
+            <p className="mt-1 text-xs">{calError ? `⚠️ ${calError}` : `📅 Google Calendar: ${events.length} events this week`}</p>
+            {Object.keys(times).length > 0 && <Button size="sm" variant="outline" className="mt-2 w-full" onClick={resetTimes}>Reset to school schedule</Button>}
+          </div>
+          <div className="rounded-2xl border bg-card p-3 text-sm">
+            <h2 className="mb-1 font-display text-lg">Canvas courses</h2>
+            {canvasError && <p className="mb-1 text-xs text-destructive">⚠️ {canvasError}</p>}
+            {CANVAS_SUBJECTS.map((sub) => (
+              <label key={sub} className="mb-1 flex items-center gap-2 text-xs">
+                <span className="w-20 font-bold">{sub}</span>
+                <select className="h-8 min-w-0 flex-1 rounded-md border bg-card px-1" value={courses[sub] ?? ""} onChange={(e) => setCourse(sub, e.target.value)}>
+                  <option value="">Not linked</option>
+                  {allCourses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </label>
+            ))}
+            {Object.entries(agendas).filter(([, a]) => a?.reminders.length).map(([sub, a]) => (
+              <p key={sub} className="mt-2 rounded bg-accent/40 p-1 text-xs"><b>{sub}:</b> {a!.reminders.join(" ")}</p>
+            ))}
+          </div>
+        <div className="rounded-2xl border bg-card p-3">
           <h2 className="mb-2 font-display text-lg">Class lists</h2>
           <div className="mb-2 flex gap-1">{CLASSES.map((c) => <Button key={c} size="sm" variant={tab === c ? "default" : "outline"} onClick={() => setTab(c)}>{c}</Button>)}</div>
           <p className="mb-1 text-xs text-muted-foreground">{names(tab).length} students · used by {tab === "Homeroom" ? "every board except Reading and Math" : `${tab} boards`}</p>
@@ -135,6 +254,7 @@ function Schedule() {
             {names(tab).map((n, i) => <li key={n + i}>{n} <span className="text-xs text-muted-foreground">({displayNames(names(tab))[i]})</span></li>)}
           </ol>
           <p className="mt-2 text-xs text-muted-foreground">Edit these from Class list on the board.</p>
+        </div>
         </aside>
       </div>
     </div>

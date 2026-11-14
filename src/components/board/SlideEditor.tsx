@@ -8,6 +8,7 @@ import { SUBJECT_DESIGNS, subjectData, subjectDesign, type SubjectKey } from "@/
 import { artFor } from "@/lib/art";
 import { AiDraftPanel, SubjectThemePanel } from "./SubjectTools";
 import { SpotifySetup } from "./SpotifySetup";
+import { CANVAS_SUBJECTS } from "@/lib/school-sync";
 
 const WIDGET_TYPES: { type: Widget["type"]; label: string }[] = [
   { type: "sequence", label: "Timer sequence" },
@@ -16,6 +17,7 @@ const WIDGET_TYPES: { type: Widget["type"]; label: string }[] = [
   { type: "symbols", label: "Work symbols" },
   { type: "clock", label: "Clock" },
   { type: "spotify", label: "Spotify" },
+  { type: "lesson", label: "Lesson & homework" },
 ];
 
 export function SlideEditor({ slide, onChange }: { slide: Slide; onChange: (s: Slide) => void }) {
@@ -103,6 +105,15 @@ function SymbolSelect({ value, onChange }: { value: string; onChange: (v: string
 }
 
 function WidgetFields({ w, onChange }: { w: Widget; onChange: (w: Widget) => void }) {
+  if (w.type === "lesson")
+    return (
+      <label className="block text-xs">Canvas subject
+        <select className="mt-1 h-9 w-full rounded-md border bg-card px-2 text-sm" value={w.subject} onChange={(e) => onChange({ ...w, subject: e.target.value })}>
+          {CANVAS_SUBJECTS.map((s) => <option key={s}>{s}</option>)}
+        </select>
+        <span className="mt-1 block text-muted-foreground">Shows today's lesson and homework from Canvas.</span>
+      </label>
+    );
   if (w.type === "timer")
     return (
       <div className="grid grid-cols-2 gap-2">

@@ -6,7 +6,8 @@ export type Widget =
   | { id: string; type: "picker" }
   | { id: string; type: "symbols"; symbols: string[] }
   | { id: string; type: "spotify"; url: string }
-  | { id: string; type: "clock" };
+  | { id: string; type: "clock" }
+  | { id: string; type: "lesson"; subject: string };
 
 export type SlideData = {
   heading: string;
@@ -73,6 +74,8 @@ export function newWidget(type: Widget["type"]): Widget {
       return { id, type, url: "" };
     case "clock":
       return { id, type };
+    case "lesson":
+      return { id, type, subject: "Math" };
   }
 }
 

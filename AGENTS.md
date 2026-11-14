@@ -17,3 +17,5 @@
 - AI slide drafting runs in an authenticated server function (src/lib/draft.functions.ts) so the AI key stays on the server.
 - Spotify Premium playback uses browser-only PKCE sign-in (teacher's own Spotify app Client ID, no secret) and one shared Web Playback SDK player in src/lib/spotify.ts — there is no Spotify connector, and a singleton avoids duplicate players in editor and present mode.
 - Classroom game tools (random number, mystery star, prize board) keep state in browser localStorage with logic in src/lib/games.ts — survives refresh without a database change.
+- Canvas lessons/homework come from each course's weekly agenda page (title holds the week's dates), read through the Canvas custom connector in src/lib/canvas.functions.ts and parsed by src/lib/canvas.ts.
+- Edited block times and the subject→Canvas course map live in auth user metadata; Google Calendar is read-only and only used for display and no-school days.

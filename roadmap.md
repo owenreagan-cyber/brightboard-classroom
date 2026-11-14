@@ -1,3 +1,3 @@
 - [x] Create matching Canva backgrounds for every schedule subject.
 - [x] Replace the default slide design with subject artwork, backgrounds, and text themes.
-- [x] Verify subject designs in the signed-in board.
+- [x] Verify subject designs in the signed-in board.- [x] Schedule page: editable block times, Google Calendar events/days off, Canvas lesson + homework

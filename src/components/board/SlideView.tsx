@@ -73,7 +73,7 @@ export function SlideView({ data, names, thumb = false }: { data: SlideData; nam
           <div className="subject-footer">{exam ? "Assessment · Do your best" : "Hero Board"}</div>
         </div>
         <div className={`subject-tools ${thumb ? "pointer-events-none" : ""}`}>
-          {widgets.filter((w) => !thumb || w.type !== "spotify").map((w) => (
+          {widgets.filter((w) => !thumb || (w.type !== "spotify" && w.type !== "lesson")).map((w) => (
             <WidgetView key={w.id} w={w} names={names} />
           ))}
         </div>

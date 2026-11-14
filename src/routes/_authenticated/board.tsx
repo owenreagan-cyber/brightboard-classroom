@@ -15,6 +15,8 @@ import { DAYS, FOLDERS, applyToAllDays, exportLibrary, isAssessment, toBoardJson
 import { ImportDialog, LibraryList, StagedBadge, SuggestionBar, download } from "@/components/board/Library";
 import mascot from "@/assets/mascot-hero.png";
 import { cleanTheme, setSubjectThemes } from "@/lib/subject-theme";
+import { applyOffDays, loadSettings, loadWeekEvents } from "@/lib/school-sync";
+import { weekStart } from "@/lib/calendar";
 
 type Search = { slide?: number | undefined };
 
@@ -53,6 +55,9 @@ function Board() {
       const { data: auth } = await supabase.auth.getUser();
       const saved = (auth.user?.user_metadata?.["subjectThemes"] ?? {}) as Record<string, unknown>;
       setSubjectThemes(Object.fromEntries(Object.entries(saved).map(([k, v]) => [k, cleanTheme(v)])));
+      await loadSettings();
+      const monday = weekStart(new Date());
+      loadWeekEvents(monday).then((r) => applyOffDays(r.events, monday)).catch(() => {});
       const { data, error } = await supabase.from("slides").select("id, position, title, data").order("position");
       if (error) { toast.error(error.message); return; }
       let rows = data as unknown as Slide[];

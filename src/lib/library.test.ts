@@ -76,3 +76,26 @@ describe("weekGrid", () => {
     expect(g.flatMap((b) => b.cells.flatMap((c) => c.slides)).some((s: { id: string }) => s.id === "AssessmentsMon")).toBe(false);
   });
 });
+
+import { effectiveBlocks, cleanBlockTimes, suggest as sug, setOffDays } from "./library";
+describe("editable block times", () => {
+  const mk2 = (folder: string, day: string) => ({ id: folder, position: 0, title: folder, data: { heading: "", body: "", bg: "sky", widgets: [], folder, day } }) as never;
+  it("moves Movement to 10:15 and suggests it then", () => {
+    const blocks = effectiveBlocks({ Movement: { from: 615, to: 650 } });
+    expect(blocks.find((b) => b.folders[0] === "Movement")).toMatchObject({ from: 615, to: 650 });
+    const tue1012 = new Date(2026, 10, 17, 10, 12);
+    expect(sug([mk2("Movement", "Tue")], tue1012, blocks).current).toBeNull();
+    expect(sug([mk2("Movement", "Tue")], new Date(2026, 10, 17, 10, 20), blocks).current?.id).toBe("Movement");
+  });
+  it("reset (no edits) gives the school schedule, and ignores bad times", () => {
+    expect(effectiveBlocks({}).find((b) => b.folders[0] === "Movement")).toMatchObject({ from: 605, to: 640 });
+    expect(effectiveBlocks({ Movement: { from: 700, to: 600 } }).find((b) => b.folders[0] === "Movement")!.from).toBe(605);
+    expect(cleanBlockTimes({ Nope: { from: 1, to: 2 }, Math: { from: 470, to: 545 } })).toEqual({ Math: { from: 470, to: 545 } });
+  });
+  it("suggests nothing on a day off", () => {
+    setOffDays(["Tue"]);
+    expect(sug([mk2("Math", "Tue")], new Date(2026, 10, 17, 8, 0)).current).toBeNull();
+    setOffDays([]);
+    expect(sug([mk2("Math", "Tue")], new Date(2026, 10, 17, 8, 0)).current?.id).toBe("Math");
+  });
+});

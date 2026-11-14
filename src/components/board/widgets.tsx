@@ -9,6 +9,9 @@ import {
 } from "@/lib/board";
 import { initSpotifyPlayer, MUSIC_LIBRARY, resolveLibraryItem, spotify, spotifyContextUri, useSpotifyConnected, useSpotifyPlayer } from "@/lib/spotify";
 import { toast } from "sonner";
+import { useTodayAgenda } from "@/lib/school-sync";
+import { ymd } from "@/lib/calendar";
+import { dayOf } from "@/lib/library";
 
 function useNow(ms = 1000) {
   const [now, setNow] = useState(() => new Date());
@@ -258,5 +261,26 @@ export function WidgetView({ w, names }: { w: Widget; names: string[] }) {
     case "symbols": return <SymbolsWidget w={w} />;
     case "picker": return <PickerWidget names={names} />;
     case "spotify": return <SpotifyWidget w={w} />;
+    case "lesson": return <LessonWidget w={w} />;
   }
+}
+
+export function LessonWidget({ w }: { w: Extract<Widget, { type: "lesson" }> }) {
+  const now = useNow(60_000);
+  const day = dayOf(now);
+  const { agenda, error } = useTodayAgenda(w.subject, ymd(now));
+  const today = day ? agenda?.days[day] : undefined;
+  return (
+    <div className="rounded-2xl border-4 border-foreground bg-card p-3 text-card-foreground">
+      <div className="font-display text-lg">📚 {w.subject}{today?.lesson ? ` — ${today.lesson}` : ""}</div>
+      {agenda === undefined ? <p className="text-sm text-muted-foreground">Loading from Canvas…</p>
+        : !day ? <p className="text-sm">No school today!</p>
+        : !today ? <p className="text-sm text-muted-foreground">{error ?? "No agenda for today in Canvas."}</p>
+        : <>
+            {today.inClass.length > 1 && <ul className="text-sm">{today.inClass.map((x) => <li key={x}>• {x}</li>)}</ul>}
+            <div className="mt-1 text-sm font-bold">🏠 Homework</div>
+            {today.atHome.length ? <ul className="text-sm">{today.atHome.map((x) => <li key={x}>• {x}</li>)}</ul> : <p className="text-sm">None tonight 🎉</p>}
+          </>}
+    </div>
+  );
 }
