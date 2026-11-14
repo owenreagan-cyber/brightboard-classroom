@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  TIER_INFO, decideStar, loadState, newPrizeBoard, newRng, newStar, pickStar, pickTile, remaining, roll, setRange, undoRoll, undoStar, undoTile,
+  TIER_COUNTS, TIER_INFO, cleanMix, decideStar, loadState, newPrizeBoard, newRng, newStar, pickStar, pickTile, remaining, roll, setRange, undoRoll, undoStar, undoTile,
   type PrizeState, type RngState, type StarState, type Tier,
 } from "@/lib/games";
 
@@ -115,10 +115,29 @@ const TIER_STYLE: Record<Tier, string> = {
 
 export function PrizeBoard() {
   const [s, set] = usePersisted<PrizeState>("hb-prize", () => newPrizeBoard(), (v) => isObj(v) && Array.isArray(v["tiles"]) && v["tiles"].length === 100 && Array.isArray(v["picked"]), true);
+  const [mix, setMix] = usePersisted<Record<Tier, number>>("hb-prize-mix", () => ({ ...TIER_COUNTS }), (v) => isObj(v), true);
   const [shown, setShown] = useState<Tier | null>(null);
   const [confirm, setConfirm] = useState(false);
+  const [settings, setSettings] = useState(false);
   return (
     <div className="w-[420px] max-w-full space-y-2">
+      {settings && (
+        <div className="space-y-2 rounded-xl bg-muted p-2 text-xs">
+          <div className="font-bold">Prize mix (out of 100 tiles) — used on the next new board</div>
+          <div className="grid grid-cols-4 gap-2">
+            {(Object.keys(TIER_INFO) as Tier[]).map((t) => (
+              <label key={t} className="flex flex-col gap-1">
+                <span>{TIER_INFO[t].emoji} {TIER_INFO[t].label}</span>
+                {t === "standard" ? <span className="rounded bg-card px-2 py-1 font-bold">{cleanMix(mix).standard}</span> : (
+                  <input type="number" min={0} max={100} value={cleanMix(mix)[t]} aria-label={`${TIER_INFO[t].label} tiles`}
+                    onChange={(e) => setMix(cleanMix({ ...cleanMix(mix), [t]: Number(e.target.value) }))}
+                    className="w-full rounded border-2 border-foreground bg-card px-2 py-1" />
+                )}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="h-10 text-center font-display text-2xl">{shown ? `${TIER_INFO[shown].emoji} ${TIER_INFO[shown].label}` : "Pick a number!"}</div>
       <div className="grid grid-cols-10 gap-0.5">
         {s.tiles.map((t, i) => {
@@ -134,10 +153,11 @@ export function PrizeBoard() {
       <div className="flex items-center justify-between text-xs">
         <span>{100 - s.picked.length} left</span>
         <div className="flex gap-2">
+          <button onClick={() => setSettings((v) => !v)} className={`${btn} bg-muted`}>{settings ? "Done" : "Mix"}</button>
           <button disabled={!s.picked.length} onClick={() => { set(undoTile(s)); setShown(null); }} className={`${btn} bg-accent text-accent-foreground`}>Undo</button>
           {confirm ? (
             <>
-              <button onClick={() => { set(newPrizeBoard()); setShown(null); setConfirm(false); }} className={`${btn} bg-destructive text-destructive-foreground`}>Yes, new board</button>
+              <button onClick={() => { set(newPrizeBoard(Math.random, cleanMix(mix))); setShown(null); setConfirm(false); }} className={`${btn} bg-destructive text-destructive-foreground`}>Yes, new board</button>
               <button onClick={() => setConfirm(false)} className={`${btn} bg-muted`}>Cancel</button>
             </>
           ) : <button onClick={() => setConfirm(true)} className={`${btn} bg-destructive text-destructive-foreground`}>Reset</button>}

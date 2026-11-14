@@ -85,6 +85,16 @@ export function suggest(slides: Slide[], now: Date, blocks: Block[] = activeBloc
   return { current: i >= 0 ? find(blocks[i]!.folders) : null, next: nextBlock ? find(nextBlock.folders) : null };
 }
 
+/** Countdown to the end of the current block (or start of the next one) for the present-mode bar. */
+export function blockCountdown(now: Date, blocks: Block[] = activeBlocks()): { label: string; seconds: number; inBlock: boolean } | null {
+  if (!dayOf(now)) return null;
+  const secs = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+  const i = blocks.findIndex((b) => secs >= b.from * 60 && secs < b.to * 60);
+  if (i >= 0) { const nb = blocks[i + 1]; return { label: nb ? nb.folders[0]! : "End of day", seconds: blocks[i]!.to * 60 - secs, inBlock: true }; }
+  const nb = blocks.find((b) => b.from * 60 > secs);
+  return nb ? { label: nb.folders[0]!, seconds: nb.from * 60 - secs, inBlock: false } : null;
+}
+
 /** Copy widgets + layout (bg, heading, body) from source to every other day in the same folder. */
 export function applyToAllDays(slides: Slide[], source: Slide): { updates: Slide[]; missing: Day[] } {
   const folder = source.data.folder;

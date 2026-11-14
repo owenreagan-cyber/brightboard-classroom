@@ -99,3 +99,10 @@ describe("editable block times", () => {
     expect(sug([mk2("Math", "Tue")], new Date(2026, 10, 17, 8, 0)).current?.id).toBe("Math");
   });
 });
+
+import { blockCountdown, BLOCKS as _B } from "./library";
+describe("block countdown", () => {
+  it("counts down to Math from inside Homeroom", () => { const c = blockCountdown(new Date(2026, 10, 16, 7, 45, 30), _B); expect(c).toEqual({ label: "Math", seconds: 270, inBlock: true }); });
+  it("is off on weekends", () => expect(blockCountdown(new Date(2026, 10, 14, 9, 0), _B)).toBeNull());
+  it("after dismissal ends there is nothing", () => expect(blockCountdown(new Date(2026, 10, 16, 16, 0), _B)).toBeNull());
+});

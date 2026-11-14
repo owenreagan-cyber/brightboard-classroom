@@ -61,9 +61,19 @@ export const TIER_COUNTS: Record<Tier, number> = { standard: 70, rare: 18, legen
 
 export type PrizeState = { tiles: Tier[]; picked: number[] };
 
-export function newPrizeBoard(rand = Math.random): PrizeState {
+/** Teacher's prize mix: rare/legendary/whammy are clamped (0–100 total) and standard fills the rest to 100. */
+export function cleanMix(v: unknown): Record<Tier, number> {
+  const o = (v && typeof v === "object" ? v : {}) as Record<string, unknown>;
+  const n = (k: Tier) => { const x = Math.round(Number(o[k])); return Number.isFinite(x) ? Math.max(0, Math.min(100, x)) : TIER_COUNTS[k]; };
+  let rare = n("rare"), legendary = n("legendary"), whammy = n("whammy");
+  whammy = Math.min(whammy, 100); legendary = Math.min(legendary, 100 - whammy); rare = Math.min(rare, 100 - whammy - legendary);
+  return { standard: 100 - rare - legendary - whammy, rare, legendary, whammy };
+}
+
+export function newPrizeBoard(rand = Math.random, mix: Record<Tier, number> = TIER_COUNTS): PrizeState {
+  const counts = cleanMix(mix);
   const tiles: Tier[] = [];
-  (Object.keys(TIER_COUNTS) as Tier[]).forEach((t) => { for (let i = 0; i < TIER_COUNTS[t]; i++) tiles.push(t); });
+  (Object.keys(counts) as Tier[]).forEach((t) => { for (let i = 0; i < counts[t]; i++) tiles.push(t); });
   for (let i = tiles.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));
     [tiles[i], tiles[j]] = [tiles[j]!, tiles[i]!];

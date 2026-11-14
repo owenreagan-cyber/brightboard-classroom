@@ -10,8 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScaledSlide, SlideView } from "@/components/board/SlideView";
 import { FloatingLayer } from "@/components/board/floating";
 import { SlideEditor } from "@/components/board/SlideEditor";
-import { templateSlides, type Slide, type SlideData } from "@/lib/board";
-import { DAYS, FOLDERS, applyToAllDays, exportLibrary, isAssessment, toBoardJson, type Folder } from "@/lib/library";
+import { formatSec, templateSlides, type Slide, type SlideData } from "@/lib/board";
+import { DAYS, FOLDERS, applyToAllDays, blockCountdown, suggest, exportLibrary, isAssessment, toBoardJson, type Folder } from "@/lib/library";
 import { ImportDialog, LibraryList, StagedBadge, SuggestionBar, download } from "@/components/board/Library";
 import mascot from "@/assets/mascot-hero.png";
 import { cleanTheme, setSubjectThemes } from "@/lib/subject-theme";
@@ -251,6 +251,28 @@ function Board() {
 
 function Presenter({ slides, idx, names, go, onExit }: { slides: Slide[]; idx: number; names: string[]; go: (i: number) => void; onExit: () => void }) {
   const touchX = useRef<number | null>(null);
+  const [now, setNow] = useState(() => new Date());
+  const [auto, setAuto] = useState(false);
+  const [idle, setIdle] = useState(false);
+  useEffect(() => { setAuto(localStorage.getItem("hb-auto") === "1"); const t = window.setInterval(() => setNow(new Date()), 1000); return () => window.clearInterval(t); }, []);
+  // Hide the cursor after 3 seconds without movement.
+  useEffect(() => {
+    let t = window.setTimeout(() => setIdle(true), 3000);
+    const move = () => { setIdle(false); window.clearTimeout(t); t = window.setTimeout(() => setIdle(true), 3000); };
+    window.addEventListener("pointermove", move);
+    return () => { window.removeEventListener("pointermove", move); window.clearTimeout(t); };
+  }, []);
+  const cd = blockCountdown(now);
+  const sugId = suggest(slides, now).current?.id;
+  // Auto-advance: jump to the scheduled board when a new block starts.
+  const lastSug = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (!auto || !sugId || sugId === lastSug.current) { lastSug.current = sugId; return; }
+    lastSug.current = sugId;
+    const j = slides.findIndex((s) => s.id === sugId);
+    if (j >= 0 && j !== idx) go(j);
+  }, [auto, sugId, slides, idx, go]);
+  const toggleAuto = () => { setAuto((a) => { localStorage.setItem("hb-auto", a ? "0" : "1"); lastSug.current = undefined; return !a; }); };
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).tagName === "INPUT") return;
@@ -265,7 +287,7 @@ function Presenter({ slides, idx, names, go, onExit }: { slides: Slide[]; idx: n
   }, [idx, slides.length, go, onExit]);
   return (
     <div
-      className="fixed inset-0 z-50 bg-foreground group"
+      className={`fixed inset-0 z-50 bg-foreground group ${idle ? "cursor-none" : ""}`}
       onTouchStart={(e) => (touchX.current = e.touches[0]!.clientX)}
       onTouchEnd={(e) => {
         if (touchX.current == null) return;
@@ -276,10 +298,16 @@ function Presenter({ slides, idx, names, go, onExit }: { slides: Slide[]; idx: n
       }}
     >
       <ScaledSlide className="h-full w-full"><SlideView data={slides[idx]!.data} names={names} /></ScaledSlide>
+      {cd && cd.seconds <= 60 * 60 && (
+        <div className={`absolute right-4 top-4 rounded-full border-4 border-foreground px-5 py-2 font-display text-2xl shadow-xl ${cd.seconds <= 60 ? "animate-pulse bg-destructive text-destructive-foreground" : "bg-card text-card-foreground"}`}>
+          {cd.seconds <= 60 ? "Up next: " : ""}{cd.label} in {formatSec(cd.seconds)}
+        </div>
+      )}
       <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-card/90 px-3 py-1 opacity-0 transition group-hover:opacity-100">
         <Button size="icon" variant="ghost" aria-label="Previous slide" onClick={() => go(Math.max(0, idx - 1))}><ChevronLeft /></Button>
         <span className="text-sm font-bold">{idx + 1} / {slides.length}</span>
         <Button size="icon" variant="ghost" aria-label="Next slide" onClick={() => go(Math.min(slides.length - 1, idx + 1))}><ChevronRight /></Button>
+        <Button size="sm" variant={auto ? "default" : "ghost"} onClick={toggleAuto} title="Switch to the scheduled board when each block starts">Auto {auto ? "on" : "off"}</Button>
         <Button size="icon" variant="ghost" aria-label="Exit" onClick={onExit}><X /></Button>
       </div>
     </div>

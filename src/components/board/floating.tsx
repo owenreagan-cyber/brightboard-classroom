@@ -27,6 +27,16 @@ export function FloatingLayer({ assessment = false, names = [] }: { assessment?:
   const [items, setItems] = useState<Item[]>([]);
   const [menu, setMenu] = useState(false);
   const top = useRef(10);
+  const [ready, setReady] = useState(false);
+  // Keep open tools and their positions across a refresh.
+  useEffect(() => {
+    try {
+      const v = JSON.parse(localStorage.getItem("hb-floating") ?? "[]");
+      if (Array.isArray(v)) { const ok = v.filter((i) => i && typeof i.id === "string" && i.kind in LABELS && Number.isFinite(i.x) && Number.isFinite(i.y)); setItems(ok); top.current = Math.max(10, ...ok.map((i) => i.z || 0)); }
+    } catch { /* ignore */ }
+    setReady(true);
+  }, []);
+  useEffect(() => { if (ready) localStorage.setItem("hb-floating", JSON.stringify(items)); }, [items, ready]);
   const front = (id: string) => setItems((all) => all.map((i) => (i.id === id ? { ...i, z: ++top.current } : i)));
   const add = (kind: Kind) => {
     setItems((all) => [...all, { id: uid(), kind, x: 120 + all.length * 30, y: 120 + all.length * 30, z: ++top.current }]);
