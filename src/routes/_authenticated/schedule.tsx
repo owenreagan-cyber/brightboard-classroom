@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, ChevronLeft, ChevronRight, Clock, Lock, Plus, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,8 @@ import { CANVAS_SUBJECTS, applyOffDays, defaultCourses, loadAgendas, loadSetting
 import { CLASSES, DEFAULT_ROSTERS, classFor, displayNames, type ClassName } from "@/lib/rosters";
 import { artFor } from "@/lib/art";
 import type { Slide, SlideData } from "@/lib/board";
+import { LessonPlanner } from "@/components/board/LessonPlanner";
+import { lessonOn, type DailyMessage, type LessonPlans } from "@/lib/lesson-planner";
 
 export const Route = createFileRoute("/_authenticated/schedule")({
   head: () => ({
@@ -47,6 +49,9 @@ function Schedule() {
   const [canvasError, setCanvasError] = useState<string>();
   const [syncing, setSyncing] = useState(false);
   const [tick, setTick] = useState(0);
+  const [lessonPlans, setLessonPlans] = useState<LessonPlans>({});
+  const [lessonOff, setLessonOff] = useState<string[]>([]);
+  const receiveCounters = useCallback((plans: LessonPlans, off: string[]) => { setLessonPlans(plans); setLessonOff(off); }, []);
 
   const monday = (() => { const m = weekStart(now ?? new Date()); m.setDate(m.getDate() + weekOffset * 7); return m; })();
   const mondayKey = monday.toDateString();
@@ -122,6 +127,19 @@ function Schedule() {
   const days = focus === "week" ? [...DAYS] : [focus];
   const names = (c: ClassName) => rosters[c] ?? DEFAULT_ROSTERS[c];
   const assessments = slides.filter((s) => s.data.folder === "Assessments");
+  const useMessage = async (subject: string, date: string, message: DailyMessage) => {
+    const day = DAYS[new Date(date + "T12:00").getDay() - 1];
+    if (!day) return;
+    const existing = slides.find((s) => s.data.folder === subject && s.data.day === day);
+    if (existing && !window.confirm(`Replace the text on ${existing.title}?`)) return;
+    const data: SlideData = { ...(existing?.data ?? { bg: "sky", widgets: [] }), folder: subject as Folder, day, heading: message.heading, body: message.body };
+    const result = existing
+      ? await supabase.from("slides").update({ data: data as never }).eq("id", existing.id)
+      : await supabase.from("slides").insert({ title: `${subject} ${day} · Lesson welcome`, position: slides.length, data: data as never });
+    if (result.error) { toast.error(result.error.message); return; }
+    toast.success("Daily message added to the board");
+    navigate({ to: "/board", search: { slide: existing ? slides.indexOf(existing) + 1 : slides.length + 1 } });
+  };
 
   return (
     <div className="min-h-screen bg-secondary">
@@ -139,6 +157,7 @@ function Schedule() {
           {DAYS.map((d) => <Button key={d} size="sm" variant={focus === d ? "default" : "outline"} onClick={() => setFocus(d)}>{d}{d === today ? " •" : ""}</Button>)}
         </div>
       </header>
+      <LessonPlanner dates={dates} offDates={off.map(dateOf)} agendas={agendas} onUse={useMessage} onCounters={receiveCounters} />
       <div className="flex flex-col gap-4 p-4 lg:flex-row">
         <div className="min-w-0 flex-1 overflow-x-auto rounded-2xl border bg-card">
           <table className="w-full border-collapse text-sm">
@@ -184,13 +203,14 @@ function Schedule() {
                     </td>
                     {b.cells.filter((c) => days.includes(c.day)).map((c) => (
                       <td key={c.day} className={`p-2 align-top ${c.day === today ? "bg-accent/20" : ""}`}>
+                        {lessonPlans[b.folder] && <div className="mb-1 text-xs font-bold text-primary">{(() => { const p = lessonPlans[b.folder]; const n = p ? lessonOn(p, dateOf(c.day), lessonOff) : null; return n === null ? "No lesson" : `Planned lesson ${n}`; })()}</div>}
                         {b.folder === "Specials" && <div className="mb-1 flex items-center gap-1 text-xs font-bold"><img src={artFor({ folder: "Specials", day: c.day }) ?? ""} alt="" className="h-5 w-5 rounded" />{c.label}</div>}
                         {eventsOn(events, dateOf(c.day)).filter((e) => !e.allDay && (() => { const t = new Date(e.start); const m = t.getHours() * 60 + t.getMinutes(); return m >= b.from && m < b.to; })()).map((e) => (
                           <div key={e.id} className="mb-1 rounded bg-accent px-1 text-[11px] font-bold text-accent-foreground">📅 {new Date(e.start).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} {e.summary}</div>
                         ))}
                         {(lessonFor(b.folder, c.day)?.inClass.length || lessonFor(b.folder, c.day)?.atHome.length) ? (
                           <div className="mb-1 rounded border border-primary/40 bg-primary/5 p-1 text-[11px]">
-                            <div className="font-bold">📚 {lessonFor(b.folder, c.day)!.lesson ?? "—"}</div>
+                            <div className="font-bold">📚 Canvas: {lessonFor(b.folder, c.day)?.lesson ?? "—"}</div>
                             {lessonFor(b.folder, c.day)!.atHome.length > 0 && <div>🏠 {lessonFor(b.folder, c.day)!.atHome.join("; ")}</div>}
                           </div>
                         ) : null}

@@ -1,3 +1,7 @@
 - [x] Create matching Canva backgrounds for every schedule subject.
 - [x] Replace the default slide design with subject artwork, backgrounds, and text themes.
-- [x] Verify subject designs in the signed-in board.- [x] Schedule page: editable block times, Google Calendar events/days off, Canvas lesson + homework
+- [x] Verify subject designs in the signed-in board.
+- [x] Schedule page: editable block times, Google Calendar events/days off, Canvas lesson + homework
+- [x] Add continuing lesson counters with saved starting dates, corrections, and skipped days.
+- [x] Generate and save AI daily welcome messages using the previous lesson's homework.
+- [x] Verify counter progression and the signed-in message-to-board flow.

@@ -2,6 +2,7 @@ import type { Day } from "./library";
 export type CalEvent = { id: string; summary: string; start: string; end: string; allDay: boolean };
 const DAYS: Day[] = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 const OFF = /\b(no school|holiday|break|teacher workday|workday|closed|day off|vacation|thanksgiving)\b/i;
+export const schoolClosed = (events: CalEvent[], date: string) => eventsOn(events, date).some((e) => e.allDay && OFF.test(e.summary));
 
 /** Local calendar date (YYYY-MM-DD) from the browser clock. */
 export const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -20,5 +21,5 @@ export function eventsOn(events: CalEvent[], date: string): CalEvent[] {
 }
 /** Weekdays an all-day "no school"-type event covers. */
 export function offDaysFor(events: CalEvent[], dates: string[]): Day[] {
-  return DAYS.filter((_, i) => eventsOn(events, dates[i]!).some((e) => e.allDay && OFF.test(e.summary)));
+  return DAYS.filter((_, i) => { const date = dates[i]; return date ? schoolClosed(events, date) : false; });
 }

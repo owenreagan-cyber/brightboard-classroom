@@ -19,3 +19,5 @@
 - Classroom game tools (random number, mystery star, prize board) keep state in browser localStorage with logic in src/lib/games.ts — survives refresh without a database change.
 - Canvas lessons/homework come from each course's weekly agenda page (title holds the week's dates), read through the Canvas custom connector in src/lib/canvas.functions.ts and parsed by src/lib/canvas.ts.
 - Edited block times and the subject→Canvas course map live in auth user metadata; Google Calendar is read-only and only used for display and no-school days.
+- Continuing lesson plans and dated welcome messages live in user metadata; pure teaching-day progression is independent of Canvas so agenda refreshes cannot reset a counter.
+- Lesson welcome generation uses authenticated server functions and request-scoped Responses helpers; numbers and materials are assembled deterministically so AI cannot alter homework references.
