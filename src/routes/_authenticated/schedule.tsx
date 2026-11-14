@@ -150,7 +150,7 @@ function Schedule() {
           <Button size="icon" variant="outline" aria-label="Previous week" onClick={() => setWeekOffset(weekOffset - 1)}><ChevronLeft className="h-4 w-4" /></Button>
           <span className="text-sm font-bold">{isThisWeek ? "This week" : weekOffset === 1 ? "Next week" : "Week of"} · {monday.toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
           <Button size="icon" variant="outline" aria-label="Next week" onClick={() => setWeekOffset(weekOffset + 1)}><ChevronRight className="h-4 w-4" /></Button>
-          <Button size="sm" variant="ghost" onClick={() => setTick(tick + 1)} disabled={syncing}><RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} /> Sync</Button>
+          <Button size="sm" variant="outline" onClick={() => setTick((value) => value + 1)} disabled={syncing} aria-busy={syncing}><RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} /> {syncing ? "Syncing with Canvas…" : "Sync with Canvas"}</Button>
         </div>
         <div className="ml-auto flex flex-wrap gap-1">
           <Button size="sm" variant={focus === "week" ? "default" : "outline"} onClick={() => setFocus("week")}>Week</Button>
