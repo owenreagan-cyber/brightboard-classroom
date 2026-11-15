@@ -5,3 +5,5 @@
 - [x] Add continuing lesson counters with saved starting dates, corrections, and skipped days.
 - [x] Generate and save AI daily welcome messages using the previous lesson's homework.
 - [x] Verify counter progression and the signed-in message-to-board flow.
+- [x] Read the real staff school calendar, including breaks and track-outs.
+- [x] Add month browsing and dated school-day labels; verify holidays and counter exclusions.

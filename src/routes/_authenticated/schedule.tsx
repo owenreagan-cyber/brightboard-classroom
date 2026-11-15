@@ -8,8 +8,10 @@ import { ScaledSlide, SlideView } from "@/components/board/SlideView";
 import { StagedBadge } from "@/components/board/Library";
 import { DAYS, dayOf, parseHM, toHM, weekGrid, type BlockTimes, type Day, type Folder } from "@/lib/library";
 import { Input } from "@/components/ui/input";
-import { eventsOn, offDaysFor, weekDates, weekStart, type CalEvent } from "@/lib/calendar";
-import { CANVAS_SUBJECTS, applyOffDays, defaultCourses, loadAgendas, loadSettings, loadWeekEvents, saveBlockTimes, saveCourses, type CourseMap, type WeekAgendas } from "@/lib/school-sync";
+import { eventsOn, schoolDayStatus, schoolYear, ymd, weekDates, weekStart, type CalEvent } from "@/lib/calendar";
+import { listCalendarEvents } from "@/lib/calendar.functions";
+import { SchoolCalendar } from "@/components/board/SchoolCalendar";
+import { CANVAS_SUBJECTS, applyOffDays, defaultCourses, loadAgendas, loadSettings, saveBlockTimes, saveCourses, type CourseMap, type WeekAgendas } from "@/lib/school-sync";
 import { CLASSES, DEFAULT_ROSTERS, classFor, displayNames, type ClassName } from "@/lib/rosters";
 import { artFor } from "@/lib/art";
 import type { Slide, SlideData } from "@/lib/board";
@@ -20,9 +22,9 @@ export const Route = createFileRoute("/_authenticated/schedule")({
   head: () => ({
     meta: [
       { title: "Class Schedule — Hero Board" },
-      { name: "description", content: "Plan each day's blocks, specials and boards for the week ahead." },
+      { name: "description", content: "Browse real school days, holidays and track-outs, and plan daily lessons and classroom boards." },
       { property: "og:title", content: "Class Schedule — Hero Board" },
-      { property: "og:description", content: "Plan each day's blocks, specials and boards for the week ahead." },
+      { property: "og:description", content: "Browse real school days, holidays and track-outs, and plan daily lessons and classroom boards." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -38,6 +40,10 @@ function Schedule() {
   const [focus, setFocus] = useState<Day | "week">("week");
   const [tab, setTab] = useState<ClassName>("Homeroom");
   const [weekOffset, setWeekOffset] = useState(0);
+  const [calendarMonth, setCalendarMonth] = useState<Date | null>(null);
+  const [showMonth, setShowMonth] = useState(true);
+  const [calendarVerified, setCalendarVerified] = useState(false);
+  const [calendarSources, setCalendarSources] = useState<string[]>([]);
   const [times, setTimes] = useState<BlockTimes>({});
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState({ from: "", to: "" });
@@ -55,6 +61,7 @@ function Schedule() {
 
   const monday = (() => { const m = weekStart(now ?? new Date()); m.setDate(m.getDate() + weekOffset * 7); return m; })();
   const mondayKey = monday.toDateString();
+  const year = schoolYear(calendarMonth ?? now ?? new Date());
 
   useEffect(() => {
     (async () => {
@@ -75,7 +82,6 @@ function Schedule() {
     setSyncing(true);
     const fresh = tick > 0;
     Promise.all([
-      loadWeekEvents(monday).then((r) => { if (!live) return; setEvents(r.events); setCalError(r.error); if (weekOffset === 0) applyOffDays(r.events, monday); }),
       Object.keys(courses).length ? loadAgendas(courses, weekDates(monday)[0]!, fresh).then((r) => { if (!live) return; setAgendas(r.agendas); setCanvasError(r.error); }) : Promise.resolve(),
     ]).finally(() => live && setSyncing(false));
     return () => { live = false; };
@@ -83,7 +89,21 @@ function Schedule() {
   }, [mondayKey, courses, tick, !!now]);
 
   useEffect(() => {
+    if (!now) return;
+    let live = true;
+    setCalendarVerified(false);
+    listCalendarEvents({ data: year }).then((r) => {
+      if (!live) return;
+      setEvents(r.events); setCalError(r.error); setCalendarVerified(!!r.schoolCalendar && !r.error); setCalendarSources(r.sources ?? []);
+      // Browsing another year must not change today's automatic suggestions.
+      if (schoolYear(now).from === year.from) applyOffDays(r.events, weekStart(now));
+    }).catch(() => { if (live) { setCalError("Couldn't read the school calendar."); setCalendarVerified(false); } });
+    return () => { live = false; };
+  }, [year.from, year.to, tick, !!now]);
+
+  useEffect(() => {
     setNow(new Date());
+    setCalendarMonth(new Date());
     const t = setInterval(() => setNow(new Date()), 60_000);
     (async () => {
       const { data, error } = await supabase.from("slides").select("id, position, title, data").order("position");
@@ -108,7 +128,7 @@ function Schedule() {
   const grid = weekGrid(slides, undefined);
   const dates = weekDates(monday);
   const dateOf = (d: Day) => dates[DAYS.indexOf(d)]!;
-  const off = offDaysFor(events, dates);
+  const off = DAYS.filter((d) => ["off", "outside"].includes(schoolDayStatus(events, dateOf(d), calendarVerified).kind));
   const isThisWeek = weekOffset === 0;
   const saveTime = async (key: string) => {
     const from = parseHM(draft.from), to = parseHM(draft.to);
@@ -125,6 +145,19 @@ function Schedule() {
   };
   const lessonFor = (folder: string, d: Day) => agendas[folder]?.days[d];
   const days = focus === "week" ? [...DAYS] : [focus];
+  const selectDate = (date: string) => {
+    const chosen = new Date(date + "T12:00");
+    // Keep the selected week in the same school year as the month being browsed.
+    const base = weekStart(now ?? new Date());
+    const target = weekStart(chosen);
+    setWeekOffset(Math.round((Date.UTC(target.getFullYear(), target.getMonth(), target.getDate()) - Date.UTC(base.getFullYear(), base.getMonth(), base.getDate())) / 604800000));
+    setCalendarMonth(chosen);
+    setFocus(dayOf(chosen) ?? "week");
+  };
+  const moveWeek = (offset: number) => {
+    const target = new Date(monday); target.setDate(target.getDate() + (offset - weekOffset) * 7);
+    setWeekOffset(offset); setCalendarMonth(target);
+  };
   const names = (c: ClassName) => rosters[c] ?? DEFAULT_ROSTERS[c];
   const assessments = slides.filter((s) => s.data.folder === "Assessments");
   const useMessage = async (subject: string, date: string, message: DailyMessage) => {
@@ -146,17 +179,21 @@ function Schedule() {
       <header className="flex flex-wrap items-center gap-3 border-b bg-card px-4 py-2">
         <Button asChild variant="outline" size="sm"><Link to="/board" search={{ slide: undefined }}><ArrowLeft className="h-4 w-4" /> Board</Link></Button>
         <h1 className="font-display text-xl text-primary">Class Schedule</h1>
-        <div className="flex items-center gap-1">
-          <Button size="icon" variant="outline" aria-label="Previous week" onClick={() => setWeekOffset(weekOffset - 1)}><ChevronLeft className="h-4 w-4" /></Button>
+        <div className="flex min-w-0 flex-wrap items-center gap-1">
+          <Button size="icon" variant="outline" aria-label="Previous week" onClick={() => moveWeek(weekOffset - 1)}><ChevronLeft className="h-4 w-4" /></Button>
           <span className="text-sm font-bold">{isThisWeek ? "This week" : weekOffset === 1 ? "Next week" : "Week of"} · {monday.toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
-          <Button size="icon" variant="outline" aria-label="Next week" onClick={() => setWeekOffset(weekOffset + 1)}><ChevronRight className="h-4 w-4" /></Button>
+          <Button size="icon" variant="outline" aria-label="Next week" onClick={() => moveWeek(weekOffset + 1)}><ChevronRight className="h-4 w-4" /></Button>
+          <Input type="date" aria-label="Go to date" className="h-9 w-36" value={dateOf(focus === "week" ? "Mon" : focus)} onChange={(e) => e.target.value && selectDate(e.target.value)} />
+          <Button size="sm" variant="outline" onClick={() => { setWeekOffset(0); setCalendarMonth(new Date()); setFocus("week"); }}>Today</Button>
           <Button size="sm" variant="outline" onClick={() => setTick((value) => value + 1)} disabled={syncing} aria-busy={syncing}><RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} /> {syncing ? "Syncing with Canvas…" : "Sync with Canvas"}</Button>
         </div>
         <div className="ml-auto flex flex-wrap gap-1">
+          <Button size="sm" variant={showMonth ? "default" : "outline"} onClick={() => setShowMonth(!showMonth)}>Month</Button>
           <Button size="sm" variant={focus === "week" ? "default" : "outline"} onClick={() => setFocus("week")}>Week</Button>
           {DAYS.map((d) => <Button key={d} size="sm" variant={focus === d ? "default" : "outline"} onClick={() => setFocus(d)}>{d}{d === today ? " •" : ""}</Button>)}
         </div>
       </header>
+      {showMonth && calendarMonth && <SchoolCalendar month={calendarMonth} events={events} verified={calendarVerified} today={now ? ymd(now) : ""} onMonth={setCalendarMonth} onDate={selectDate} />}
       <LessonPlanner dates={dates} offDates={off.map(dateOf)} agendas={agendas} onUse={useMessage} onCounters={receiveCounters} />
       <div className="flex flex-col gap-4 p-4 lg:flex-row">
         <div className="min-w-0 flex-1 overflow-x-auto rounded-2xl border bg-card">
@@ -167,18 +204,18 @@ function Schedule() {
                 {days.map((d) => <th key={d} className={`p-2 text-left font-display ${d === today ? "bg-accent text-accent-foreground" : ""}`}>{d} <span className="font-sans text-xs font-normal">{new Date(dateOf(d) + "T12:00").toLocaleDateString(undefined, { month: "numeric", day: "numeric" })}</span>{d === today ? " (today)" : ""}</th>)}
               </tr>
               <tr>
-                <td className="p-2 text-xs text-muted-foreground">Google Calendar</td>
+                <td className="p-2 text-xs text-muted-foreground">School calendar</td>
                 {days.map((d) => (
                   <td key={d} className={`p-2 align-top ${off.includes(d) ? "bg-destructive/10" : ""}`}>
                     {eventsOn(events, dateOf(d)).filter((e) => e.allDay).map((e) => <div key={e.id} className="mb-1 rounded bg-accent px-2 py-0.5 text-xs font-bold text-accent-foreground">📅 {e.summary}</div>)}
-                    {off.includes(d) && <div className="text-xs font-bold text-destructive">No school — no boards suggested</div>}
+                    <div className={`text-xs font-bold ${off.includes(d) ? "text-destructive" : "text-primary"}`}>{schoolDayStatus(events, dateOf(d), calendarVerified).label}</div>
                   </td>
                 ))}
               </tr>
             </thead>
             <tbody>
               {grid.map((b) => {
-                const isNow = mins >= b.from && mins < b.to;
+                const isNow = !!today && !off.includes(today) && mins >= b.from && mins < b.to;
                 return (
                   <tr key={b.folder} className={`border-t ${isNow ? "bg-primary/10" : ""}`}>
                     <td className="p-2 align-top">
@@ -203,6 +240,7 @@ function Schedule() {
                     </td>
                     {b.cells.filter((c) => days.includes(c.day)).map((c) => (
                       <td key={c.day} className={`p-2 align-top ${c.day === today ? "bg-accent/20" : ""}`}>
+                        {off.includes(c.day) ? <span className="text-xs text-muted-foreground">No class</span> : <>
                         {lessonPlans[b.folder] && <div className="mb-1 text-xs font-bold text-primary">{(() => { const p = lessonPlans[b.folder]; const n = p ? lessonOn(p, dateOf(c.day), lessonOff) : null; return n === null ? "No lesson" : `Planned lesson ${n}`; })()}</div>}
                         {b.folder === "Specials" && <div className="mb-1 flex items-center gap-1 text-xs font-bold"><img src={artFor({ folder: "Specials", day: c.day }) ?? ""} alt="" className="h-5 w-5 rounded" />{c.label}</div>}
                         {eventsOn(events, dateOf(c.day)).filter((e) => !e.allDay && (() => { const t = new Date(e.start); const m = t.getHours() * 60 + t.getMinutes(); return m >= b.from && m < b.to; })()).map((e) => (
@@ -229,6 +267,7 @@ function Schedule() {
                         {b.folder !== "Specials" && ["Homeroom", "Reading", "Math"].includes(b.folder) && focus !== "week" && (
                           <p className="mt-1 text-xs text-muted-foreground">{classFor(b.folder)} class · {names(classFor(b.folder)).length} students</p>
                         )}
+                        </>}
                       </td>
                     ))}
                   </tr>
@@ -247,7 +286,7 @@ function Schedule() {
           <div className="rounded-2xl border bg-card p-3 text-sm">
             <h2 className="mb-1 font-display text-lg">Sync</h2>
             <p className="text-xs text-muted-foreground">Dates and times use this computer's clock. Refreshes every 5 minutes.</p>
-            <p className="mt-1 text-xs">{calError ? `⚠️ ${calError}` : `📅 Google Calendar: ${events.length} events this week`}</p>
+            <p className="mt-1 text-xs">{calError ? `⚠️ ${calError}` : calendarVerified ? `📅 ${calendarSources.join(" + ")} · ${year.from.slice(0, 4)}–${year.to.slice(0, 4)}` : "Loading school calendar…"}</p>
             {Object.keys(times).length > 0 && <Button size="sm" variant="outline" className="mt-2 w-full" onClick={resetTimes}>Reset to school schedule</Button>}
           </div>
           <div className="rounded-2xl border bg-card p-3 text-sm">
