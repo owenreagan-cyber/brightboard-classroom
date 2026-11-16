@@ -121,6 +121,7 @@ const widget = z.discriminatedUnion("type", [
   z.object({ type: z.literal("spotify"), url: z.string() }),
   z.object({ type: z.literal("clock") }),
   z.object({ type: z.literal("lesson"), subject: z.string() }),
+  z.object({ type: z.literal("staged"), label: z.string(), start: z.string().regex(/^\d{1,2}:\d{2}$/), gapMin: z.number().min(1), groups: z.array(z.object({ name: z.string(), students: z.array(z.string()) })).min(1), finale: z.array(z.object({ time: z.string(), label: z.string() })) }),
 ]);
 export const BoardSchema = z.object({
   title: z.string().min(1),

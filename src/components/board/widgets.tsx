@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { useTodayAgenda } from "@/lib/school-sync";
 import { ymd } from "@/lib/calendar";
 import { dayOf } from "@/lib/library";
+import { dailyGroupOrder, getStagedState } from "@/lib/staged";
+import { usePersisted } from "./games";
 
 function useNow(ms = 1000) {
   const [now, setNow] = useState(() => new Date());
@@ -262,6 +264,7 @@ export function WidgetView({ w, names }: { w: Widget; names: string[] }) {
     case "picker": return <PickerWidget names={names} />;
     case "spotify": return <SpotifyWidget w={w} />;
     case "lesson": return <LessonWidget w={w} />;
+    case "staged": return <StagedWidget w={w} />;
   }
 }
 
@@ -281,6 +284,54 @@ export function LessonWidget({ w }: { w: Extract<Widget, { type: "lesson" }> }) 
             <div className="mt-1 text-sm font-bold">🏠 Homework</div>
             {today.atHome.length ? <ul className="text-sm">{today.atHome.map((x) => <li key={x}>• {x}</li>)}</ul> : <p className="text-sm">None tonight 🎉</p>}
           </>}
+    </div>
+  );
+}
+
+type StagedW = Extract<Widget, { type: "staged" }>;
+export function StagedWidget({ w }: { w: StagedW }) {
+  const now = useNow();
+  const today = ymd(now);
+  const [shuf, setShuf] = usePersisted<{ date: string; shift: number }>("hb-staged-shift", () => ({ date: "", shift: 0 }), (v) => !!v && typeof v === "object", true);
+  const shift = shuf.date === today ? shuf.shift : 0;
+  const order = dailyGroupOrder(today, w.groups.length, shift);
+  const st = getStagedState(w.start, w.gapMin, w.groups.length, w.finale, now);
+  const key = st.status === "going" ? `g${st.slot}` : st.status === "finale" ? st.label : st.status;
+  const prev = useRef("");
+  useEffect(() => { if (prev.current && prev.current !== key) chime(); prev.current = key; }, [key]);
+  const cur = st.status === "going" ? w.groups[order[st.slot]!] : undefined;
+  const timeAt = (slot: number) => stepStartLabel(w.start, Array(slot).fill({ minutes: w.gapMin, label: "", symbol: "" }), slot);
+  return (
+    <div className={card}>
+      <div className="flex items-center justify-between gap-4">
+        <div className="slide-kicker text-muted-foreground">{w.label} · starts {stepStartLabel(w.start, [], 0)}</div>
+        <button className="kid-btn kid-btn-soft" style={{ fontSize: "0.7em", padding: "0.3em 0.8em" }} onClick={() => setShuf({ date: today, shift: shift + 1 })}>🔀 Shuffle again</button>
+      </div>
+      {st.status === "waiting" && <div className="slide-body-lg font-display mt-4">Starts in {formatSec(st.startsInSec)} ⏳</div>}
+      {cur && st.status === "going" && (
+        <div key={key} className="mt-4 animate-in zoom-in">
+          <div className="font-display text-primary" style={{ fontSize: 72, lineHeight: 1 }}>{cur.name} — GO!</div>
+          <div className="slide-body-lg font-display mt-2 text-foreground">{cur.students.join(", ")}</div>
+          <div className="slide-caption mt-2 text-muted-foreground">Next group in {formatSec(st.nextInSec)}</div>
+        </div>
+      )}
+      {st.status === "allOut" && <div className="slide-body-lg font-display mt-4">{st.next.label} in {formatSec(st.inSec)}</div>}
+      {st.status === "finale" && <div key={key} className="mt-4 animate-in zoom-in rounded-[32px] bg-primary px-8 py-6 text-center font-display text-primary-foreground" style={{ fontSize: 80, lineHeight: 1.1 }}>{st.label}</div>}
+      {st.status === "done" && <div className="slide-body-lg font-display mt-4">All done! 🎉</div>}
+      <ol className="mt-6 space-y-2">
+        {order.map((gi, slot) => (
+          <li key={gi} className={`slide-caption flex items-center gap-4 rounded-full px-5 py-2 ${st.status === "going" && st.slot === slot ? "bg-primary text-primary-foreground" : "bg-muted/70"}`}>
+            <span className="tabular-nums w-20">{timeAt(slot)}</span>
+            <span className="font-bold">{w.groups[gi]!.name}</span>
+            <span className="truncate">{w.groups[gi]!.students.join(", ")}</span>
+          </li>
+        ))}
+        {w.finale.map((f) => (
+          <li key={f.time + f.label} className="slide-caption flex items-center gap-4 rounded-full bg-accent px-5 py-2 text-accent-foreground">
+            <span className="tabular-nums w-20">{stepStartLabel(f.time, [], 0)}</span><span className="font-bold">{f.label}</span>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }

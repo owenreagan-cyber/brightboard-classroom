@@ -7,3 +7,4 @@
 - [x] Verify counter progression and the signed-in message-to-board flow.
 - [x] Read the real staff school calendar, including breaks and track-outs.
 - [x] Add month browsing and dated school-day labels; verify holidays and counter exclusions.
+- Staged group timers (bathroom/locker 9:00, lunch 12:20) with daily shuffled group order — done

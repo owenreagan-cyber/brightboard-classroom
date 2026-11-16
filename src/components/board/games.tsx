@@ -6,7 +6,7 @@ import {
 } from "@/lib/games";
 
 /** State saved in this browser and, when cloud is set, in the teacher's account so it follows them across devices. */
-function usePersisted<T>(key: string, fallback: () => T, valid: (v: unknown) => boolean, cloud = false) {
+export function usePersisted<T>(key: string, fallback: () => T, valid: (v: unknown) => boolean, cloud = false) {
   const [s, setRaw] = useState<T>(fallback);
   const [ready, setReady] = useState(false);
   const dirty = useRef(false);

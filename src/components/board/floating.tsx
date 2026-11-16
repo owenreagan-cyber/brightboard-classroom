@@ -1,13 +1,22 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Plus, X } from "lucide-react";
 import { MysteryStar, PrizeBoard, RandomNumber } from "./games";
-import { formatSec, getTwoPhaseState, uid } from "@/lib/board";
+import { formatSec, getTwoPhaseState, uid, newWidget, type Widget } from "@/lib/board";
+import { StagedWidget } from "./widgets";
+import { STAGED_PRESETS } from "@/lib/staged";
 
-type Kind = "signals" | "timer" | "phases" | "noise" | "rng" | "star" | "prize";
+function presetWidget(k: "bathroom" | "lunch") {
+  const p = STAGED_PRESETS[k];
+  return { ...(newWidget("staged") as Extract<Widget, { type: "staged" }>), label: p.label, start: p.start, gapMin: p.gapMin, finale: p.finale.map((f) => ({ ...f })) };
+}
+const BATH = presetWidget("bathroom");
+const LUNCH = presetWidget("lunch");
+
+type Kind = "signals" | "timer" | "phases" | "noise" | "rng" | "star" | "prize" | "stagedBath" | "stagedLunch";
 const GAMES: Kind[] = ["noise", "star", "prize"];
 type Item = { id: string; kind: Kind; x: number; y: number; z: number };
 
-const LABELS: Record<Kind, string> = { signals: "Voice signals", timer: "Timer", phases: "Two-phase timer", noise: "Noise meter", rng: "Random number", star: "Mystery star", prize: "100 Prize board" };
+const LABELS: Record<Kind, string> = { signals: "Voice signals", timer: "Timer", phases: "Two-phase timer", noise: "Noise meter", rng: "Random number", star: "Mystery star", prize: "100 Prize board", stagedBath: "Bathroom / locker groups", stagedLunch: "Lunch groups" };
 
 function beep() {
   try {
@@ -48,7 +57,7 @@ export function FloatingLayer({ assessment = false, names = [] }: { assessment?:
         <Floating key={it.id} item={it} onFront={() => front(it.id)}
           onMove={(x, y) => setItems((all) => all.map((i) => (i.id === it.id ? { ...i, x, y } : i)))}
           onClose={() => setItems((all) => all.filter((i) => i.id !== it.id))}>
-          {it.kind === "rng" ? <RandomNumber /> : it.kind === "star" ? <MysteryStar names={names} /> : it.kind === "prize" ? <PrizeBoard /> : it.kind === "noise" ? <NoiseMeter /> : it.kind === "signals" ? <Signals /> : it.kind === "timer" ? <QuickTimer /> : <TwoPhase />}
+          {it.kind === "stagedBath" || it.kind === "stagedLunch" ? <div style={{ zoom: 0.5, width: 900 }}><StagedWidget w={it.kind === "stagedBath" ? BATH : LUNCH} /></div> : it.kind === "rng" ? <RandomNumber /> : it.kind === "star" ? <MysteryStar names={names} /> : it.kind === "prize" ? <PrizeBoard /> : it.kind === "noise" ? <NoiseMeter /> : it.kind === "signals" ? <Signals /> : it.kind === "timer" ? <QuickTimer /> : <TwoPhase />}
         </Floating>
       ))}
       <div className="pointer-events-auto absolute bottom-4 right-4 flex flex-col items-end gap-2">

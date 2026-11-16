@@ -9,6 +9,7 @@ import { artFor } from "@/lib/art";
 import { AiDraftPanel, SubjectThemePanel } from "./SubjectTools";
 import { SpotifySetup } from "./SpotifySetup";
 import { CANVAS_SUBJECTS } from "@/lib/school-sync";
+import { STAGED_PRESETS } from "@/lib/staged";
 
 const WIDGET_TYPES: { type: Widget["type"]; label: string }[] = [
   { type: "sequence", label: "Timer sequence" },
@@ -18,6 +19,7 @@ const WIDGET_TYPES: { type: Widget["type"]; label: string }[] = [
   { type: "clock", label: "Clock" },
   { type: "spotify", label: "Spotify" },
   { type: "lesson", label: "Lesson & homework" },
+  { type: "staged", label: "Staged group timer" },
 ];
 
 export function SlideEditor({ slide, onChange }: { slide: Slide; onChange: (s: Slide) => void }) {
@@ -105,6 +107,43 @@ function SymbolSelect({ value, onChange }: { value: string; onChange: (v: string
 }
 
 function WidgetFields({ w, onChange }: { w: Widget; onChange: (w: Widget) => void }) {
+  if (w.type === "staged")
+    return (
+      <div className="space-y-2">
+        <div className="flex flex-wrap gap-1">
+          {Object.values(STAGED_PRESETS).map((p) => (
+            <Button key={p.label} size="sm" variant="outline" onClick={() => onChange({ ...w, label: p.label, start: p.start, gapMin: p.gapMin, finale: p.finale.map((f) => ({ ...f })) })}>{p.label}</Button>
+          ))}
+        </div>
+        <Input value={w.label} placeholder="Title" onChange={(e) => onChange({ ...w, label: e.target.value })} />
+        <div className="flex items-center gap-2">
+          <Label className="text-xs">Starts</Label>
+          <Input type="time" className="w-32" value={w.start} onChange={(e) => onChange({ ...w, start: e.target.value })} />
+          <Label className="text-xs">Every</Label>
+          <Input type="number" min={1} className="w-16" value={w.gapMin} onChange={(e) => onChange({ ...w, gapMin: Math.max(1, +e.target.value) })} aria-label="Minutes between groups" />
+          <span className="text-xs">min</span>
+        </div>
+        {w.groups.map((g, i) => (
+          <div key={i} className="rounded-xl bg-muted p-2">
+            <div className="text-xs font-bold">{g.name}</div>
+            <Input value={g.students.join(", ")} aria-label={`${g.name} names`} onChange={(e) => onChange({ ...w, groups: w.groups.map((x, j) => (j === i ? { ...x, students: e.target.value.split(",").map((n) => n.trimStart()) } : x)) })} />
+          </div>
+        ))}
+        <div className="text-xs font-bold">End messages</div>
+        {w.finale.map((f, i) => {
+          const set = (p: Partial<typeof f>) => onChange({ ...w, finale: w.finale.map((x, j) => (j === i ? { ...x, ...p } : x)) });
+          return (
+            <div key={i} className="flex gap-1">
+              <Input type="time" className="w-32" value={f.time} onChange={(e) => set({ time: e.target.value })} />
+              <Input value={f.label} onChange={(e) => set({ label: e.target.value })} />
+              <Button size="icon" variant="ghost" aria-label="Remove message" onClick={() => onChange({ ...w, finale: w.finale.filter((_, j) => j !== i) })}><Trash2 className="h-4 w-4" /></Button>
+            </div>
+          );
+        })}
+        <Button size="sm" variant="outline" onClick={() => onChange({ ...w, finale: [...w.finale, { time: "09:15", label: "Ready!" }] })}><Plus className="h-3 w-3" /> Add message</Button>
+        <p className="text-xs text-muted-foreground">Group order changes every day automatically.</p>
+      </div>
+    );
   if (w.type === "lesson")
     return (
       <label className="block text-xs">Canvas subject

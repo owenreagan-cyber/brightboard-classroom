@@ -1,3 +1,4 @@
+import { HOMEROOM_GROUPS } from "./staged";
 export type SequenceStep = { minutes: number; label: string; symbol: string };
 
 export type Widget =
@@ -7,7 +8,8 @@ export type Widget =
   | { id: string; type: "symbols"; symbols: string[] }
   | { id: string; type: "spotify"; url: string }
   | { id: string; type: "clock" }
-  | { id: string; type: "lesson"; subject: string };
+  | { id: string; type: "lesson"; subject: string }
+  | { id: string; type: "staged"; label: string; start: string; gapMin: number; groups: { name: string; students: string[] }[]; finale: { time: string; label: string }[] };
 
 export type SlideData = {
   heading: string;
@@ -76,6 +78,8 @@ export function newWidget(type: Widget["type"]): Widget {
       return { id, type };
     case "lesson":
       return { id, type, subject: "Math" };
+    case "staged":
+      return { id, type, label: "Bathroom / locker", start: "09:00", gapMin: 2, groups: HOMEROOM_GROUPS.map((g) => ({ ...g, students: [...g.students] })), finale: [{ time: "09:15", label: "Ready for Shurley!" }] };
   }
 }
 
