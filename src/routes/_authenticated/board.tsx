@@ -193,7 +193,7 @@ function Board() {
         <div className="ml-auto flex flex-wrap gap-2">
           <Button asChild variant="outline"><Link to="/schedule"><CalendarDays className="h-4 w-4" /> Schedule</Link></Button>
           <Button asChild variant="outline"><Link to="/music">🎵 Music</Link></Button>
-          <Button asChild variant="outline"><Link to="/characters">🥷 Characters</Link></Button>
+          <Button asChild variant="outline"><Link to="/characters" search={{ slide: undefined }}>🥷 Characters</Link></Button>
           <Button variant="outline" onClick={() => setImportOpen(true)}><Upload className="h-4 w-4" /> Import JSON</Button>
           <Button variant="outline" onClick={() => download(`${current.title}.json`, JSON.stringify({ version: 1, boards: [toBoardJson(current)] }, null, 2))}><Download className="h-4 w-4" /> Export board</Button>
           <Button variant="outline" onClick={() => download("hero-board-library.json", exportLibrary(slides))}><Download className="h-4 w-4" /> Export library</Button>
@@ -219,6 +219,7 @@ function Board() {
             <Button size="sm" variant="outline" onClick={() => move(-1)}><ChevronLeft className="h-4 w-4" /> Move up</Button>
             <Button size="sm" variant="outline" onClick={() => move(1)}>Move down <ChevronRight className="h-4 w-4" /></Button>
             <Button size="sm" variant="outline" onClick={() => addSlide(current)}><Copy className="h-4 w-4" /> Duplicate</Button>
+            <Button size="sm" variant="outline" asChild><Link to="/characters" search={{ slide: current.id }}>🥷 Swap characters</Link></Button>
             <Button size="sm" variant="outline" onClick={() => deleteSlide(current)}><Trash2 className="h-4 w-4" /> Delete</Button>
             <select aria-label="Folder" className="h-9 rounded-md border bg-card px-2 text-sm" value={current.data.folder ?? ""}
               onChange={(e) => save({ ...current, data: { ...current.data, folder: (e.target.value || undefined) as SlideData["folder"] } })}>

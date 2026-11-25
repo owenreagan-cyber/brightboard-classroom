@@ -11,6 +11,7 @@ import { figureForKey } from "@/lib/art";
 import { StickerWidget } from "@/components/board/widgets";
 
 export const Route = createFileRoute("/_authenticated/characters")({
+  validateSearch: (s: Record<string, unknown>): { slide?: string | undefined } => ({ slide: typeof s["slide"] === "string" ? s["slide"] : undefined }),
   head: () => ({
     meta: [
       { title: "Character Gallery — Hero Board" },
@@ -27,6 +28,7 @@ export const Route = createFileRoute("/_authenticated/characters")({
 type Sticker = Extract<Widget, { type: "sticker" }>;
 
 function CharactersPage() {
+  const { slide: slideParam } = Route.useSearch();
   const [subject, setSubject] = useState("homeroom");
   const [bubble, setBubble] = useState<BubbleStyle>("speech");
   const [side, setSide] = useState<"left" | "right">("left");
@@ -40,9 +42,10 @@ function CharactersPage() {
       if (error) { toast.error(error.message); return; }
       const rows = data as unknown as Slide[];
       setSlides(rows);
-      if (rows[0]) setSlideId(rows[0].id);
+      const pick = rows.find((r) => r.id === slideParam) ?? rows[0];
+      if (pick) setSlideId(pick.id);
     });
-  }, []);
+  }, [slideParam]);
 
   const slide = slides.find((s) => s.id === slideId);
   const stickers = useMemo(() => (slide?.data.widgets ?? []).filter((w): w is Sticker => w.type === "sticker"), [slide]);
@@ -71,8 +74,24 @@ function CharactersPage() {
     <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-8">
       <div className="flex flex-wrap items-center gap-3">
         <Button asChild variant="outline"><Link to="/board" search={{ slide: undefined }}><ArrowLeft className="h-4 w-4" /> Board</Link></Button>
-        <h1 className="font-display text-3xl">Character gallery</h1>
+        <h1 className="font-display text-3xl">{slideParam && slide ? `Characters on ${slide.title}` : "Character gallery"}</h1>
       </div>
+      {slide && (
+        <div className="space-y-2 rounded-xl border-2 bg-card p-3">
+          <div className="font-display text-lg">On this slide</div>
+          <div className="flex flex-wrap gap-2">
+            {stickers.map((w, i) => (
+              <button key={w.id} onClick={() => loadFrom(w.id)} aria-pressed={target === w.id}
+                className={`flex items-center gap-2 rounded-lg border-2 p-2 text-left text-sm ${target === w.id ? "border-primary bg-primary/10" : "border-border"}`}>
+                <img src={figureForKey(w.subject)} alt="" className="h-14 w-10 object-contain" />
+                <span>Swap #{i + 1}<br /><span className="text-muted-foreground">{w.text.slice(0, 24) || "(no text)"}</span></span>
+              </button>
+            ))}
+            <button onClick={() => setTarget("new")} aria-pressed={target === "new"}
+              className={`rounded-lg border-2 border-dashed p-2 text-sm ${target === "new" ? "border-primary bg-primary/10" : "border-border"}`}>+ Add a new one</button>
+          </div>
+        </div>
+      )}
       <p className="text-muted-foreground">Tap a character, pick a bubble, then add it to a slide or swap one that's already there.</p>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
