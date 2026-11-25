@@ -192,6 +192,7 @@ function Board() {
         <span className="font-display text-xl text-primary">Hero Board</span>
         <div className="ml-auto flex flex-wrap gap-2">
           <Button asChild variant="outline"><Link to="/schedule"><CalendarDays className="h-4 w-4" /> Schedule</Link></Button>
+          <Button asChild variant="outline"><Link to="/music">🎵 Music</Link></Button>
           <Button variant="outline" onClick={() => setImportOpen(true)}><Upload className="h-4 w-4" /> Import JSON</Button>
           <Button variant="outline" onClick={() => download(`${current.title}.json`, JSON.stringify({ version: 1, boards: [toBoardJson(current)] }, null, 2))}><Download className="h-4 w-4" /> Export board</Button>
           <Button variant="outline" onClick={() => download("hero-board-library.json", exportLibrary(slides))}><Download className="h-4 w-4" /> Export library</Button>

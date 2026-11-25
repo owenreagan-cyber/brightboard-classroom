@@ -7,7 +7,7 @@ import {
   stepStartLabel,
   type Widget,
 } from "@/lib/board";
-import { autoplayOnce, useSpotifyPresenting, initSpotifyPlayer, MUSIC_LIBRARY, resolveLibraryItem, spotify, spotifyContextUri, useSpotifyConnected, useSpotifyPlayer } from "@/lib/spotify";
+import { getClassMusic, syncClassMusic, useClassMusic, autoplayOnce, useSpotifyPresenting, initSpotifyPlayer, MUSIC_LIBRARY, resolveLibraryItem, spotify, spotifyContextUri, useSpotifyConnected, useSpotifyPlayer } from "@/lib/spotify";
 import { toast } from "sonner";
 import { useTodayAgenda } from "@/lib/school-sync";
 import { ymd } from "@/lib/calendar";
@@ -211,7 +211,15 @@ function SpotifyPremium({ url, autoplay }: { url: string; autoplay: boolean }) {
   const p = useSpotifyPlayer();
   const presenting = useSpotifyPresenting();
   useEffect(() => initSpotifyPlayer(), []);
-  const uri = spotifyContextUri(url);
+  const classId = useClassMusic();
+  const [classUri, setClassUri] = useState<string | null>(null);
+  useEffect(() => { void syncClassMusic(); }, []);
+  useEffect(() => {
+    const item = getClassMusic();
+    if (!item || spotifyContextUri(url) || p.status !== "ready") return;
+    resolveLibraryItem(item).then(setClassUri).catch(() => setClassUri(null));
+  }, [classId, url, p.status]);
+  const uri = spotifyContextUri(url) ?? classUri;
   useEffect(() => { if (autoplay && uri && presenting && p.status === "ready") autoplayOnce(uri); }, [autoplay, uri, presenting, p.status]);
   const onPlaylist = !!uri && p.contextUri === uri;
   return (
@@ -227,7 +235,7 @@ function SpotifyPremium({ url, autoplay }: { url: string; autoplay: boolean }) {
         </div>
       </div>
       <div className="mt-6 flex flex-wrap gap-4">
-        {uri && !onPlaylist && <button className="kid-btn" disabled={p.status !== "ready"} onClick={() => spotify.playContext(uri, true)}>▶ Play school playlist</button>}
+        {uri && !onPlaylist && <button className="kid-btn" disabled={p.status !== "ready"} onClick={() => spotify.playContext(uri, true)}>▶ Play {spotifyContextUri(url) ? "school playlist" : getClassMusic()?.label ?? "class music"}</button>}
         {onPlaylist && (
           <>
             <button className="kid-btn kid-btn-soft" aria-label="Previous song" onClick={spotify.prev}>⏮</button>

@@ -262,3 +262,30 @@ export function autoplayOnce(uri: string) {
   played.add(uri);
   void spotify.playContext(uri, true);
 }
+
+// --- class music (chosen on the Music page, saved to the teacher's account) ---
+const CM = "hb_class_music";
+const cmListeners = new Set<() => void>();
+export function getClassMusic(): LibraryItem | undefined {
+  const id = typeof localStorage === "undefined" ? null : localStorage.getItem(CM);
+  return MUSIC_LIBRARY.find((m) => m.id === id);
+}
+export function useClassMusic() {
+  return useSyncExternalStore((l) => { cmListeners.add(l); return () => cmListeners.delete(l); }, () => getClassMusic()?.id ?? null, () => null);
+}
+export async function setClassMusic(id: string) {
+  if (!MUSIC_LIBRARY.some((m) => m.id === id)) return;
+  localStorage.setItem(CM, id);
+  cmListeners.forEach((l) => l());
+  const { supabase } = await import("@/integrations/supabase/client");
+  await supabase.auth.updateUser({ data: { classMusic: id } });
+}
+/** Pull the saved choice from the account so phone + smartboard match. */
+export async function syncClassMusic() {
+  const { supabase } = await import("@/integrations/supabase/client");
+  const id = (await supabase.auth.getUser()).data.user?.user_metadata?.["classMusic"];
+  if (typeof id === "string" && MUSIC_LIBRARY.some((m) => m.id === id) && localStorage.getItem(CM) !== id) {
+    localStorage.setItem(CM, id);
+    cmListeners.forEach((l) => l());
+  }
+}
