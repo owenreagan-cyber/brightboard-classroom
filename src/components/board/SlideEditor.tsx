@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { BACKGROUNDS, WORK_SYMBOLS, newWidget, type Slide, type Widget } from "@/lib/board";
+import { BACKGROUNDS, BUBBLE_STYLES, WORK_SYMBOLS, newWidget, type BubbleStyle, type Slide, type Widget } from "@/lib/board";
 import { SUBJECT_DESIGNS, subjectData, subjectDesign, type SubjectKey } from "@/lib/subject-design";
 import { artFor } from "@/lib/art";
 import { AiDraftPanel, SubjectThemePanel } from "./SubjectTools";
@@ -149,6 +149,9 @@ function WidgetFields({ w, onChange }: { w: Widget; onChange: (w: Widget) => voi
       <div className="space-y-2">
         <select aria-label="Character" className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={w.subject} onChange={(e) => onChange({ ...w, subject: e.target.value })}>
           {SUBJECT_DESIGNS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
+        </select>
+        <select aria-label="Bubble style" className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={w.bubble ?? "speech"} onChange={(e) => onChange({ ...w, bubble: e.target.value as BubbleStyle })}>
+          {BUBBLE_STYLES.map((b) => <option key={b.key} value={b.key}>{b.label} bubble</option>)}
         </select>
         <Textarea rows={2} placeholder="Reminder in the speech bubble" value={w.text} onChange={(e) => onChange({ ...w, text: e.target.value })} />
         <label className="flex items-center gap-2 text-sm">

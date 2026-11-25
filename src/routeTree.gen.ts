@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as SpotifyCallbackRouteImport } from './routes/spotify-callback'
 import { Route as AuthenticatedBoardRouteImport } from './routes/_authenticated/board'
+import { Route as AuthenticatedCharactersRouteImport } from './routes/_authenticated/characters'
 import { Route as AuthenticatedMusicRouteImport } from './routes/_authenticated/music'
 import { Route as AuthenticatedScheduleRouteImport } from './routes/_authenticated/schedule'
 
@@ -35,6 +36,11 @@ const AuthenticatedBoardRoute = AuthenticatedBoardRouteImport.update({
   path: '/board',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCharactersRoute = AuthenticatedCharactersRouteImport.update({
+  id: '/characters',
+  path: '/characters',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMusicRoute = AuthenticatedMusicRouteImport.update({
   id: '/music',
   path: '/music',
@@ -50,6 +56,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/spotify-callback': typeof SpotifyCallbackRoute
   '/board': typeof AuthenticatedBoardRoute
+  '/characters': typeof AuthenticatedCharactersRoute
   '/music': typeof AuthenticatedMusicRoute
   '/schedule': typeof AuthenticatedScheduleRoute
 }
@@ -57,6 +64,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/spotify-callback': typeof SpotifyCallbackRoute
   '/board': typeof AuthenticatedBoardRoute
+  '/characters': typeof AuthenticatedCharactersRoute
   '/music': typeof AuthenticatedMusicRoute
   '/schedule': typeof AuthenticatedScheduleRoute
 }
@@ -66,20 +74,34 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/spotify-callback': typeof SpotifyCallbackRoute
   '/_authenticated/board': typeof AuthenticatedBoardRoute
+  '/_authenticated/characters': typeof AuthenticatedCharactersRoute
   '/_authenticated/music': typeof AuthenticatedMusicRoute
   '/_authenticated/schedule': typeof AuthenticatedScheduleRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/spotify-callback' | '/board' | '/music' | '/schedule'
+  fullPaths:
+    | '/'
+    | '/spotify-callback'
+    | '/board'
+    | '/characters'
+    | '/music'
+    | '/schedule'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/spotify-callback' | '/board' | '/music' | '/schedule'
+  to:
+    | '/'
+    | '/spotify-callback'
+    | '/board'
+    | '/characters'
+    | '/music'
+    | '/schedule'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/spotify-callback'
     | '/_authenticated/board'
+    | '/_authenticated/characters'
     | '/_authenticated/music'
     | '/_authenticated/schedule'
   fileRoutesById: FileRoutesById
@@ -120,6 +142,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBoardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/characters': {
+      id: '/_authenticated/characters'
+      path: '/characters'
+      fullPath: '/characters'
+      preLoaderRoute: typeof AuthenticatedCharactersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/music': {
       id: '/_authenticated/music'
       path: '/music'
@@ -139,12 +168,14 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBoardRoute: typeof AuthenticatedBoardRoute
+  AuthenticatedCharactersRoute: typeof AuthenticatedCharactersRoute
   AuthenticatedMusicRoute: typeof AuthenticatedMusicRoute
   AuthenticatedScheduleRoute: typeof AuthenticatedScheduleRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBoardRoute: AuthenticatedBoardRoute,
+  AuthenticatedCharactersRoute: AuthenticatedCharactersRoute,
   AuthenticatedMusicRoute: AuthenticatedMusicRoute,
   AuthenticatedScheduleRoute: AuthenticatedScheduleRoute,
 }

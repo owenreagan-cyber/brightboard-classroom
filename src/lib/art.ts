@@ -17,6 +17,7 @@ import snack from "@/assets/anime-snack.jpg.asset.json";
 import spelling from "@/assets/anime-spelling.jpg.asset.json";
 import title from "@/assets/anime-title.jpg.asset.json";
 import writing from "@/assets/anime-writing.jpg.asset.json";
+import fig_assessment from "@/assets/figure-assessment.webp.asset.json";
 import fig_art from "@/assets/figure-art.webp.asset.json";
 import fig_dismissal from "@/assets/figure-dismissal.webp.asset.json";
 import fig_history from "@/assets/figure-history.webp.asset.json";
@@ -55,7 +56,7 @@ export function artForKey(key: string): string {
 }
 export const titleArt = title.url;
 
-const FIGURES: Record<string, { url: string }> = { art: fig_art, dismissal: fig_dismissal, history: fig_history, homeroom: fig_homeroom, industrial: fig_industrial, latin: fig_latin, lunch: fig_lunch, math: fig_math, movement: fig_movement, music: fig_music, packup: fig_packup, pe: fig_pe, reading: fig_reading, recess: fig_recess, science: fig_science, snack: fig_snack, spelling: fig_spelling, writing: fig_writing, assessment: fig_title, hero: fig_title };
+const FIGURES: Record<string, { url: string }> = { art: fig_art, dismissal: fig_dismissal, history: fig_history, homeroom: fig_homeroom, industrial: fig_industrial, latin: fig_latin, lunch: fig_lunch, math: fig_math, movement: fig_movement, music: fig_music, packup: fig_packup, pe: fig_pe, reading: fig_reading, recess: fig_recess, science: fig_science, snack: fig_snack, spelling: fig_spelling, writing: fig_writing, assessment: fig_assessment, hero: fig_title };
 /** Full-body character sticker (transparent) for a subject key. */
 export function figureForKey(key: string): string {
   return FIGURES[key]?.url ?? fig_title.url;

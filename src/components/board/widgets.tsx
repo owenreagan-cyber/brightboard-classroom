@@ -20,7 +20,7 @@ export function StickerWidget({ w }: { w: Extract<Widget, { type: "sticker" }> }
   return (
     <div className={`sticker-figure ${w.side === "right" ? "sticker-right" : ""}`}>
       <img src={figureForKey(w.subject)} alt="" className="sticker-image" />
-      {w.text && <div className="speech-bubble font-display">{w.text}</div>}
+      {w.text && <div className={`speech-bubble bubble-${w.bubble ?? "speech"} font-display`}>{w.text}</div>}
     </div>
   );
 }

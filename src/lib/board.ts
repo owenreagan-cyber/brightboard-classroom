@@ -1,4 +1,9 @@
 import { HOMEROOM_GROUPS } from "./staged";
+export type BubbleStyle = "speech" | "shout" | "thought" | "whisper";
+export const BUBBLE_STYLES: { key: BubbleStyle; label: string }[] = [
+  { key: "speech", label: "Speech" }, { key: "shout", label: "Shout!" }, { key: "thought", label: "Thought" }, { key: "whisper", label: "Whisper" },
+];
+
 export type SequenceStep = { minutes: number; label: string; symbol: string };
 
 export type Widget =
@@ -9,7 +14,7 @@ export type Widget =
   | { id: string; type: "spotify"; url: string; autoplay?: boolean }
   | { id: string; type: "clock" }
   | { id: string; type: "lesson"; subject: string }
-  | { id: string; type: "sticker"; subject: string; text: string; side?: "left" | "right" | undefined }
+  | { id: string; type: "sticker"; subject: string; text: string; side?: "left" | "right" | undefined; bubble?: BubbleStyle | undefined }
   | { id: string; type: "staged"; label: string; start: string; end?: string | undefined; gapMin: number; groups: { name: string; students: string[] }[]; finale: { time: string; label: string }[] };
 
 export type SlideData = {
