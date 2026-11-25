@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Plus, X } from "lucide-react";
 import { MysteryStar, PrizeBoard, RandomNumber } from "./games";
-import { formatSec, getTwoPhaseState, uid, newWidget, type Widget } from "@/lib/board";
+import { catchUpTimer, formatSec, getTwoPhaseState, uid, newWidget, type Widget } from "@/lib/board";
 import { StagedWidget } from "./widgets";
 import { STAGED_PRESETS } from "@/lib/staged";
 
 function presetWidget(k: "bathroom" | "lunch") {
   const p = STAGED_PRESETS[k];
-  return { ...(newWidget("staged") as Extract<Widget, { type: "staged" }>), label: p.label, start: p.start, gapMin: p.gapMin, finale: p.finale.map((f) => ({ ...f })) };
+  return { ...(newWidget("staged") as Extract<Widget, { type: "staged" }>), label: p.label, start: p.start, end: p.end, gapMin: p.gapMin, finale: p.finale.map((f) => ({ ...f })) };
 }
 const BATH = presetWidget("bathroom");
 const LUNCH = presetWidget("lunch");
@@ -56,8 +56,8 @@ export function FloatingLayer({ assessment = false, names = [] }: { assessment?:
       {items.filter((it) => !assessment || !GAMES.includes(it.kind)).map((it) => (
         <Floating key={it.id} item={it} onFront={() => front(it.id)}
           onMove={(x, y) => setItems((all) => all.map((i) => (i.id === it.id ? { ...i, x, y } : i)))}
-          onClose={() => setItems((all) => all.filter((i) => i.id !== it.id))}>
-          {it.kind === "stagedBath" || it.kind === "stagedLunch" ? <div style={{ zoom: 0.5, width: 900 }}><StagedWidget w={it.kind === "stagedBath" ? BATH : LUNCH} /></div> : it.kind === "rng" ? <RandomNumber /> : it.kind === "star" ? <MysteryStar names={names} /> : it.kind === "prize" ? <PrizeBoard /> : it.kind === "noise" ? <NoiseMeter /> : it.kind === "signals" ? <Signals /> : it.kind === "timer" ? <QuickTimer /> : <TwoPhase />}
+          onClose={() => { localStorage.removeItem(`hb-floating-state:${it.id}`); setItems((all) => all.filter((i) => i.id !== it.id)); }}>
+          {it.kind === "stagedBath" || it.kind === "stagedLunch" ? <div style={{ zoom: 0.5, width: 900 }}><StagedWidget w={it.kind === "stagedBath" ? BATH : LUNCH} /></div> : it.kind === "rng" ? <RandomNumber /> : it.kind === "star" ? <MysteryStar names={names} /> : it.kind === "prize" ? <PrizeBoard /> : it.kind === "noise" ? <NoiseMeter /> : it.kind === "signals" ? <Signals /> : it.kind === "timer" ? <QuickTimer id={it.id} /> : <TwoPhase id={it.id} />}
         </Floating>
       ))}
       <div className="pointer-events-auto absolute bottom-4 right-4 flex flex-col items-end gap-2">
@@ -130,10 +130,29 @@ function useTick(running: boolean, onTick: () => void) {
   }, [running]);
 }
 
-function QuickTimer() {
-  const [left, setLeft] = useState(300);
-  const [running, setRunning] = useState(false);
-  useTick(running, () => setLeft((l) => { if (l <= 1) { setRunning(false); beep(); return 0; } return l - 1; }));
+/** Per-tool timer state saved in this browser; running timers keep counting across a reload. */
+function useSavedTimer<T extends { running: boolean }>(id: string, init: T, advance: (t: T, sec: number) => T) {
+  const key = `hb-floating-state:${id}`;
+  const [v, setV] = useState<T>(init);
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) { const saved = { ...init, ...JSON.parse(raw) } as T & { savedAt: number }; const { savedAt: _s, ...rest } = catchUpTimer(saved, Date.now(), (t, sec) => ({ ...t, ...advance(t, sec) })); setV(rest as unknown as T); }
+    } catch { /* ignore */ }
+    setReady(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  useEffect(() => { if (ready) localStorage.setItem(key, JSON.stringify({ ...v, savedAt: Date.now() })); }, [v, ready, key]);
+  return [v, setV] as const;
+}
+
+function QuickTimer({ id }: { id: string }) {
+  const [t, setT] = useSavedTimer<{ left: number; running: boolean }>(id, { left: 300, running: false }, (s, sec) => { const left = Math.max(0, s.left - sec); return { left, running: left > 0 }; });
+  const left = t.left, running = t.running;
+  const setLeft = (f: number | ((l: number) => number)) => setT((s) => ({ ...s, left: typeof f === "function" ? f(s.left) : f }));
+  const setRunning = (r: boolean | ((r: boolean) => boolean)) => setT((s) => ({ ...s, running: typeof r === "function" ? r(s.running) : r }));
+  useTick(running, () => setT((s) => { if (s.left <= 1) { beep(); return { left: 0, running: false }; } return { ...s, left: s.left - 1 }; }));
   return (
     <div className="text-center">
       <div className={`font-mono text-7xl font-bold tabular-nums ${left === 0 ? "text-destructive" : "text-foreground"}`}>{formatSec(left).padStart(5, "0")}</div>
@@ -152,11 +171,13 @@ function QuickTimer() {
   );
 }
 
-function TwoPhase() {
-  const [p1, setP1] = useState(10);
-  const [p2, setP2] = useState(5);
-  const [elapsed, setElapsed] = useState(0);
-  const [running, setRunning] = useState(false);
+function TwoPhase({ id }: { id: string }) {
+  const [t, setT] = useSavedTimer<{ p1: number; p2: number; elapsed: number; running: boolean }>(id, { p1: 10, p2: 5, elapsed: 0, running: false }, (s, sec) => { const total = (s.p1 + s.p2) * 60; const elapsed = Math.min(total, s.elapsed + sec); return { ...s, elapsed, running: elapsed < total }; });
+  const { p1, p2, elapsed, running } = t;
+  const setP1 = (n: number) => setT((s) => ({ ...s, p1: n }));
+  const setP2 = (n: number) => setT((s) => ({ ...s, p2: n }));
+  const setElapsed = (f: number | ((e: number) => number)) => setT((s) => ({ ...s, elapsed: typeof f === "function" ? f(s.elapsed) : f }));
+  const setRunning = (r: boolean | ((r: boolean) => boolean)) => setT((s) => ({ ...s, running: typeof r === "function" ? r(s.running) : r }));
   const st = getTwoPhaseState(p1, p2, elapsed);
   const prev = useRef(st.phase);
   useEffect(() => {

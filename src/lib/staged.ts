@@ -11,8 +11,8 @@ export const HOMEROOM_GROUPS: StagedGroup[] = [
 ];
 
 export const STAGED_PRESETS = {
-  bathroom: { label: "Bathroom / locker", start: "09:00", gapMin: 2, finale: [{ time: "09:15", label: "Ready for Shurley!" }] },
-  lunch: { label: "Lunch", start: "12:20", gapMin: 2, finale: [{ time: "12:45", label: "Clean up / sweep" }, { time: "12:48", label: "Ready for recess!" }] },
+  bathroom: { label: "Bathroom / locker", start: "09:05", end: "09:15", gapMin: 2.5, finale: [{ time: "09:15", label: "Ready for Shurley!" }] },
+  lunch: { label: "Lunch", start: "12:15", end: "12:45", gapMin: 7.5, finale: [{ time: "12:45", label: "Clean up / sweep" }, { time: "12:48", label: "Ready for recess!" }] },
 } as const;
 
 function rng(seed: string) {
@@ -56,10 +56,23 @@ export type StagedState =
   | { status: "finale"; label: string }
   | { status: "done" };
 
-export function getStagedState(start: string, gapMin: number, groups: number, finale: Finale[], now: Date): StagedState {
+/** Seconds between group calls: spread evenly from start to end, or the saved gap for older slides. */
+export function stagedGapSec(start: string, end: string | undefined, gapMin: number, groups: number): number {
+  const span = end ? (parseTime(end) - parseTime(start)) * 60 : 0;
+  return span > 0 && groups > 0 ? span / groups : Math.max(1, gapMin) * 60;
+}
+
+/** "9:07:30"-style label for a group's call time. */
+export function slotLabel(start: string, gapSec: number, slot: number): string {
+  const t = Math.round(parseTime(start) * 60 + slot * gapSec);
+  const h = Math.floor(t / 3600) % 24, m = Math.floor((t % 3600) / 60), sec = t % 60;
+  return `${h % 12 || 12}:${String(m).padStart(2, "0")}${sec ? `:${String(sec).padStart(2, "0")}` : ""}`;
+}
+
+export function getStagedState(start: string, gapSec: number, groups: number, finale: Finale[], now: Date): StagedState {
   const t = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
   const s = parseTime(start) * 60;
-  const gap = Math.max(1, gapMin) * 60;
+  const gap = Math.max(1, gapSec);
   if (t < s) return { status: "waiting", startsInSec: s - t };
   const slot = Math.floor((t - s) / gap);
   const fin = [...finale].sort((a, b) => parseTime(a.time) - parseTime(b.time));
@@ -67,7 +80,7 @@ export function getStagedState(start: string, gapMin: number, groups: number, fi
   const last = fin[fin.length - 1];
   if (last && t >= parseTime(last.time) * 60 + 600) return { status: "done" };
   if (passed.length) return { status: "finale", label: passed[passed.length - 1]!.label };
-  if (slot < groups) return { status: "going", slot, nextInSec: s + (slot + 1) * gap - t };
+  if (slot < groups) return { status: "going", slot, nextInSec: Math.ceil(s + (slot + 1) * gap - t) };
   const next = fin[0];
   return next ? { status: "allOut", next, inSec: parseTime(next.time) * 60 - t } : { status: "done" };
 }

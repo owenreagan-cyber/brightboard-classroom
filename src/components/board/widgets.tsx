@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { useTodayAgenda } from "@/lib/school-sync";
 import { ymd } from "@/lib/calendar";
 import { dayOf } from "@/lib/library";
-import { dailyGroupOrder, getStagedState } from "@/lib/staged";
+import { dailyGroupOrder, getStagedState, slotLabel, stagedGapSec } from "@/lib/staged";
 import { usePersisted } from "./games";
 
 function useNow(ms = 1000) {
@@ -295,12 +295,13 @@ export function StagedWidget({ w }: { w: StagedW }) {
   const [shuf, setShuf] = usePersisted<{ date: string; shift: number }>("hb-staged-shift", () => ({ date: "", shift: 0 }), (v) => !!v && typeof v === "object", true);
   const shift = shuf.date === today ? shuf.shift : 0;
   const order = dailyGroupOrder(today, w.groups.length, shift);
-  const st = getStagedState(w.start, w.gapMin, w.groups.length, w.finale, now);
+  const gapSec = stagedGapSec(w.start, w.end, w.gapMin, w.groups.length);
+  const st = getStagedState(w.start, gapSec, w.groups.length, w.finale, now);
   const key = st.status === "going" ? `g${st.slot}` : st.status === "finale" ? st.label : st.status;
   const prev = useRef("");
   useEffect(() => { if (prev.current && prev.current !== key) chime(); prev.current = key; }, [key]);
   const cur = st.status === "going" ? w.groups[order[st.slot]!] : undefined;
-  const timeAt = (slot: number) => stepStartLabel(w.start, Array(slot).fill({ minutes: w.gapMin, label: "", symbol: "" }), slot);
+  const timeAt = (slot: number) => slotLabel(w.start, gapSec, slot);
   return (
     <div className={card}>
       <div className="flex items-center justify-between gap-4">
@@ -321,7 +322,7 @@ export function StagedWidget({ w }: { w: StagedW }) {
       <ol className="mt-6 space-y-2">
         {order.map((gi, slot) => (
           <li key={gi} className={`slide-caption flex items-center gap-4 rounded-full px-5 py-2 ${st.status === "going" && st.slot === slot ? "bg-primary text-primary-foreground" : "bg-muted/70"}`}>
-            <span className="tabular-nums w-20">{timeAt(slot)}</span>
+            <span className="tabular-nums w-28">{timeAt(slot)}</span>
             <span className="font-bold">{w.groups[gi]!.name}</span>
             <span className="truncate">{w.groups[gi]!.students.join(", ")}</span>
           </li>

@@ -37,3 +37,10 @@ describe("two-phase timer", () => {
   it("switches to phase 2 exactly when phase 1 hits 0:00", () => expect(getTwoPhaseState(10, 5, 600)).toEqual({ phase: 2, remainingSec: 300 }));
   it("finishes after both phases", () => expect(getTwoPhaseState(10, 5, 900)).toEqual({ phase: "done", remainingSec: 0 }));
 });
+
+import { catchUpTimer } from "./board";
+describe("floating timer restore", () => {
+  const adv = (t: { left: number; running: boolean; savedAt: number }, sec: number) => ({ ...t, left: Math.max(0, t.left - sec) });
+  it("running timer keeps counting while closed", () => expect(catchUpTimer({ left: 300, running: true, savedAt: 0 }, 60_000, adv).left).toBe(240));
+  it("paused timer keeps its minutes", () => expect(catchUpTimer({ left: 300, running: false, savedAt: 0 }, 60_000, adv).left).toBe(300));
+});

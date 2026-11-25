@@ -9,7 +9,7 @@ export type Widget =
   | { id: string; type: "spotify"; url: string }
   | { id: string; type: "clock" }
   | { id: string; type: "lesson"; subject: string }
-  | { id: string; type: "staged"; label: string; start: string; gapMin: number; groups: { name: string; students: string[] }[]; finale: { time: string; label: string }[] };
+  | { id: string; type: "staged"; label: string; start: string; end?: string | undefined; gapMin: number; groups: { name: string; students: string[] }[]; finale: { time: string; label: string }[] };
 
 export type SlideData = {
   heading: string;
@@ -79,7 +79,7 @@ export function newWidget(type: Widget["type"]): Widget {
     case "lesson":
       return { id, type, subject: "Math" };
     case "staged":
-      return { id, type, label: "Bathroom / locker", start: "09:00", gapMin: 2, groups: HOMEROOM_GROUPS.map((g) => ({ ...g, students: [...g.students] })), finale: [{ time: "09:15", label: "Ready for Shurley!" }] };
+      return { id, type, label: "Bathroom / locker", start: "09:05", end: "09:15", gapMin: 2.5, groups: HOMEROOM_GROUPS.map((g) => ({ ...g, students: [...g.students] })), finale: [{ time: "09:15", label: "Ready for Shurley!" }] };
   }
 }
 
@@ -183,4 +183,11 @@ export function getTwoPhaseState(p1Min: number, p2Min: number, elapsedSec: numbe
   if (elapsedSec < a) return { phase: 1, remainingSec: a - elapsedSec };
   if (elapsedSec < a + b) return { phase: 2, remainingSec: a + b - elapsedSec };
   return { phase: "done", remainingSec: 0 };
+}
+
+/** Catch a saved floating timer up to now: running timers keep counting while the page was closed. */
+export function catchUpTimer<T extends { running: boolean; savedAt: number }>(saved: T, nowMs: number, advance: (t: T, sec: number) => T): T {
+  if (!saved.running) return saved;
+  const sec = Math.max(0, Math.floor((nowMs - saved.savedAt) / 1000));
+  return { ...advance(saved, sec), savedAt: nowMs };
 }

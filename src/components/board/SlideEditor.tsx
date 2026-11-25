@@ -112,16 +112,15 @@ function WidgetFields({ w, onChange }: { w: Widget; onChange: (w: Widget) => voi
       <div className="space-y-2">
         <div className="flex flex-wrap gap-1">
           {Object.values(STAGED_PRESETS).map((p) => (
-            <Button key={p.label} size="sm" variant="outline" onClick={() => onChange({ ...w, label: p.label, start: p.start, gapMin: p.gapMin, finale: p.finale.map((f) => ({ ...f })) })}>{p.label}</Button>
+            <Button key={p.label} size="sm" variant="outline" onClick={() => onChange({ ...w, label: p.label, start: p.start, end: p.end, gapMin: p.gapMin, finale: p.finale.map((f) => ({ ...f })) })}>{p.label}</Button>
           ))}
         </div>
         <Input value={w.label} placeholder="Title" onChange={(e) => onChange({ ...w, label: e.target.value })} />
         <div className="flex items-center gap-2">
           <Label className="text-xs">Starts</Label>
           <Input type="time" className="w-32" value={w.start} onChange={(e) => onChange({ ...w, start: e.target.value })} />
-          <Label className="text-xs">Every</Label>
-          <Input type="number" min={1} className="w-16" value={w.gapMin} onChange={(e) => onChange({ ...w, gapMin: Math.max(1, +e.target.value) })} aria-label="Minutes between groups" />
-          <span className="text-xs">min</span>
+          <Label className="text-xs">Ends</Label>
+          <Input type="time" className="w-32" value={w.end ?? ""} onChange={(e) => onChange({ ...w, end: e.target.value })} aria-label="Groups end time" />
         </div>
         {w.groups.map((g, i) => (
           <div key={i} className="rounded-xl bg-muted p-2">
