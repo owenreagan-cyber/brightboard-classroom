@@ -49,7 +49,13 @@ export function usePersisted<T>(key: string, fallback: () => T, valid: (v: unkno
     const t = window.setTimeout(() => { void queueCloudSave(key, s).then(() => { dirty.current = false; }); }, 600);
     return () => window.clearTimeout(t);
   }, [key, s, cloud]);
-  const set = (v: T) => { dirty.current = true; setRaw(v); };
+  // Keep every open copy of the same tool on this page in step.
+  useEffect(() => {
+    const on = (e: Event) => setRaw((e as CustomEvent<T>).detail);
+    window.addEventListener(`hb-sync:${key}`, on);
+    return () => window.removeEventListener(`hb-sync:${key}`, on);
+  }, [key]);
+  const set = (v: T) => { dirty.current = true; setRaw(v); window.dispatchEvent(new CustomEvent(`hb-sync:${key}`, { detail: v })); };
   return [s, set] as const;
 }
 const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object";

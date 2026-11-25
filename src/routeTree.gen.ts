@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as SpotifyCallbackRouteImport } from './routes/spotify-callback'
 import { Route as AuthenticatedBoardRouteImport } from './routes/_authenticated/board'
 import { Route as AuthenticatedCharactersRouteImport } from './routes/_authenticated/characters'
+import { Route as AuthenticatedHeroAgencyRouteImport } from './routes/_authenticated/hero-agency'
 import { Route as AuthenticatedMusicRouteImport } from './routes/_authenticated/music'
 import { Route as AuthenticatedRemoteRouteImport } from './routes/_authenticated/remote'
 import { Route as AuthenticatedScheduleRouteImport } from './routes/_authenticated/schedule'
@@ -42,6 +43,11 @@ const AuthenticatedCharactersRoute = AuthenticatedCharactersRouteImport.update({
   path: '/characters',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedHeroAgencyRoute = AuthenticatedHeroAgencyRouteImport.update({
+  id: '/hero-agency',
+  path: '/hero-agency',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMusicRoute = AuthenticatedMusicRouteImport.update({
   id: '/music',
   path: '/music',
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/spotify-callback': typeof SpotifyCallbackRoute
   '/board': typeof AuthenticatedBoardRoute
   '/characters': typeof AuthenticatedCharactersRoute
+  '/hero-agency': typeof AuthenticatedHeroAgencyRoute
   '/music': typeof AuthenticatedMusicRoute
   '/remote': typeof AuthenticatedRemoteRoute
   '/schedule': typeof AuthenticatedScheduleRoute
@@ -72,6 +79,7 @@ export interface FileRoutesByTo {
   '/spotify-callback': typeof SpotifyCallbackRoute
   '/board': typeof AuthenticatedBoardRoute
   '/characters': typeof AuthenticatedCharactersRoute
+  '/hero-agency': typeof AuthenticatedHeroAgencyRoute
   '/music': typeof AuthenticatedMusicRoute
   '/remote': typeof AuthenticatedRemoteRoute
   '/schedule': typeof AuthenticatedScheduleRoute
@@ -83,6 +91,7 @@ export interface FileRoutesById {
   '/spotify-callback': typeof SpotifyCallbackRoute
   '/_authenticated/board': typeof AuthenticatedBoardRoute
   '/_authenticated/characters': typeof AuthenticatedCharactersRoute
+  '/_authenticated/hero-agency': typeof AuthenticatedHeroAgencyRoute
   '/_authenticated/music': typeof AuthenticatedMusicRoute
   '/_authenticated/remote': typeof AuthenticatedRemoteRoute
   '/_authenticated/schedule': typeof AuthenticatedScheduleRoute
@@ -94,6 +103,7 @@ export interface FileRouteTypes {
     | '/spotify-callback'
     | '/board'
     | '/characters'
+    | '/hero-agency'
     | '/music'
     | '/remote'
     | '/schedule'
@@ -103,6 +113,7 @@ export interface FileRouteTypes {
     | '/spotify-callback'
     | '/board'
     | '/characters'
+    | '/hero-agency'
     | '/music'
     | '/remote'
     | '/schedule'
@@ -113,6 +124,7 @@ export interface FileRouteTypes {
     | '/spotify-callback'
     | '/_authenticated/board'
     | '/_authenticated/characters'
+    | '/_authenticated/hero-agency'
     | '/_authenticated/music'
     | '/_authenticated/remote'
     | '/_authenticated/schedule'
@@ -161,6 +173,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCharactersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/hero-agency': {
+      id: '/_authenticated/hero-agency'
+      path: '/hero-agency'
+      fullPath: '/hero-agency'
+      preLoaderRoute: typeof AuthenticatedHeroAgencyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/music': {
       id: '/_authenticated/music'
       path: '/music'
@@ -188,6 +207,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBoardRoute: typeof AuthenticatedBoardRoute
   AuthenticatedCharactersRoute: typeof AuthenticatedCharactersRoute
+  AuthenticatedHeroAgencyRoute: typeof AuthenticatedHeroAgencyRoute
   AuthenticatedMusicRoute: typeof AuthenticatedMusicRoute
   AuthenticatedRemoteRoute: typeof AuthenticatedRemoteRoute
   AuthenticatedScheduleRoute: typeof AuthenticatedScheduleRoute
@@ -196,6 +216,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBoardRoute: AuthenticatedBoardRoute,
   AuthenticatedCharactersRoute: AuthenticatedCharactersRoute,
+  AuthenticatedHeroAgencyRoute: AuthenticatedHeroAgencyRoute,
   AuthenticatedMusicRoute: AuthenticatedMusicRoute,
   AuthenticatedRemoteRoute: AuthenticatedRemoteRoute,
   AuthenticatedScheduleRoute: AuthenticatedScheduleRoute,

@@ -1,10 +1,11 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { usePersisted } from "./games";
 import { HERO_JOBS, JOB_PROTOCOLS, autoAssign, mentorFor, newHeroJobs, pay, rotate, type HeroJob, type HeroJobsState } from "@/lib/hero-jobs";
 
 const IMGS = import.meta.glob("@/assets/heroes/*.webp", { eager: true, import: "default" }) as Record<string, string>;
-const heroImg = (id: string) => Object.entries(IMGS).find(([k]) => k.endsWith(`/${id}.webp`))?.[1] ?? "";
-const HERO_NAMES: Record<string, string> = {
+export const heroImg = (id: string) => Object.entries(IMGS).find(([k]) => k.endsWith(`/${id}.webp`))?.[1] ?? "";
+export const HERO_NAMES: Record<string, string> = {
   deku: "Deku", shoto: "Shoto", hawks: "Hawks", endeavor: "Endeavor", eraserhead: "Eraser Head", nighteye: "Sir Nighteye", sugarman: "Sugarman", shoji: "Shoji",
   cementoss: "Cementoss", allmight: "All Might", uravity: "Uravity", froppy: "Froppy", creati: "Creati", mirko: "Mirko", mina: "Pinky", nejire: "Nejire", jiro: "Earphone Jack", mtlady: "Mt. Lady", mandalay: "Mandalay",
 };
@@ -19,7 +20,7 @@ function speak(text: string) {
 }
 
 /** Hero Agency jobs: each job has a hero mentor, a read-aloud briefing, check-ins and weekly hero points. */
-export function HeroJobs({ names }: { names: string[] }) {
+export function HeroJobs({ names, wide = false }: { names: string[]; wide?: boolean }) {
   const [s, set] = usePersisted<HeroJobsState>("hb-hero-jobs", newHeroJobs, valid, true);
   const [open, setOpen] = useState<HeroJob | null>(null);
   const [tab, setTab] = useState<"jobs" | "pay">("jobs");
@@ -28,11 +29,12 @@ export function HeroJobs({ names }: { names: string[] }) {
   const checkIn = (n: string, d: 1 | -1) => set({ ...s, checkIns: { ...s.checkIns, [n]: Math.max(0, Math.min(5, (s.checkIns[n] ?? 0) + d)) } });
 
   return (
-    <div className="w-[min(640px,calc(100vw-48px))] space-y-2">
+    <div className={`${wide ? "w-full" : "w-[min(640px,calc(100vw-48px))]"} space-y-2`}>
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-display text-lg">⚡ Hero Agency jobs</span>
         <button onClick={() => setTab("jobs")} className={`${btn} ${tab === "jobs" ? "bg-foreground text-background" : "bg-muted"}`}>Jobs</button>
         <button onClick={() => setTab("pay")} className={`${btn} ${tab === "pay" ? "bg-foreground text-background" : "bg-muted"}`}>Hero points</button>
+        <Link to="/hero-agency" search={{ tab: "licenses" }} className={`${btn} bg-muted`}>🪪 Licenses</Link>
         <button disabled={!names.length} onClick={() => set(autoAssign(s, names))} className={`${btn} ml-auto bg-primary text-primary-foreground`}>Fill empty jobs</button>
         {confirm
           ? <><button onClick={() => { set(rotate(s, names)); setConfirm(false); }} className={`${btn} bg-destructive text-destructive-foreground`}>Yes, new week</button><button onClick={() => setConfirm(false)} className={`${btn} bg-muted`}>Cancel</button></>
@@ -79,6 +81,23 @@ export function HeroJobs({ names }: { names: string[] }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/** Wallet-size hero license for one student's job, sized for printing (2.5 × 3.5 in). */
+export function LicenseCard({ job, name }: { job: HeroJob; name: string }) {
+  const hero = mentorFor(job);
+  return (
+    <div className="license-card flex flex-col overflow-hidden rounded-xl border-4 border-foreground bg-card text-card-foreground">
+      <div className="bg-foreground px-2 py-1 text-center font-display text-[11px] tracking-widest text-background">HERO AGENCY LICENSE</div>
+      <img src={heroImg(hero)} alt={HERO_NAMES[hero]} className="h-[1.55in] w-full object-cover object-top" />
+      <div className="flex flex-1 flex-col gap-0.5 p-2">
+        <div className="font-display text-lg leading-tight text-primary">{name}</div>
+        <div className="font-display text-sm leading-tight">{job.title}</div>
+        <div className="text-[9px] leading-snug">{JOB_PROTOCOLS[job.title]}</div>
+        <div className="mt-auto flex justify-between text-[9px] font-bold"><span>Mentor: {HERO_NAMES[hero]}</span><span>{job.gp} pts/week</span></div>
+      </div>
     </div>
   );
 }

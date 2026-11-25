@@ -11,3 +11,4 @@
 - [x] Widget pack: attendance, team points, groups, jobs, today's plan, brain break, help line, word of the day, phone remote, picker memory
 - [ ] One shared look for all timers (deferred)
 - [x] Hero Agency jobs tool (rebuilt from Classroom Companion)
+- [x] Hero Agency page (/hero-agency) with printable license cards; Jobs chart follows Hero Agency jobs

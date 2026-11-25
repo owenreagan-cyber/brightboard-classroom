@@ -24,4 +24,4 @@
 - Lesson welcome generation uses authenticated server functions and request-scoped Responses helpers; numbers and materials are assembled deterministically so AI cannot alter homework references.
 - Classroom tools (attendance, team points, jobs, help line, word) are floating tools in src/components/board/classroom.tsx with pure logic in src/lib/classroom.ts, synced via usePersisted cloud metadata — no database change.
 - Phone remote uses a per-teacher realtime broadcast channel (src/lib/remote.ts) — no table needed for transient commands.
-- Hero Agency jobs (src/components/board/HeroJobs.tsx, logic src/lib/hero-jobs.ts) is a rebuild of the Classroom Companion app's jobs, not a link — that app depends on an unconfigured Firebase and a browser-exposed Gemini key.
+- Hero Agency jobs (src/components/board/HeroJobs.tsx, logic src/lib/hero-jobs.ts, page /hero-agency) is a rebuild of Classroom Companion, not a link (that app needs an unconfigured Firebase and a browser-exposed Gemini key); usePersisted broadcasts hb-sync:<key> so every copy of a tool on a page stays in step.

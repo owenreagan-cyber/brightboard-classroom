@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePersisted } from "./games";
 import { figureForKey } from "@/lib/art";
+import { HERO_JOBS, newHeroJobs, type HeroJobsState } from "@/lib/hero-jobs";
 import { activeBlocks } from "@/lib/library";
 import {
   BRAIN_BREAKS, DEFAULT_JOBS, TEAMS, absentToday, addPoint, dayKey, jobsFor, joinQueue, leaveQueue, makeGroups, present, shuffle, syllables, teamScores, toggleAbsent,
@@ -99,6 +100,9 @@ export function GroupsMaker({ names }: { names: string[] }) {
 export function JobsChart({ names }: { names: string[] }) {
   const [jobs, setJobs] = usePersisted<string[]>("hb-jobs", () => DEFAULT_JOBS, (v) => Array.isArray(v), true);
   const [edit, setEdit] = useState(false);
+  // When Hero Agency jobs are assigned, the chart follows them.
+  const [hero] = usePersisted<HeroJobsState>("hb-hero-jobs", newHeroJobs, (v) => isObj(v) && isObj(v["assign"]), true);
+  const heroRows = HERO_JOBS.filter((j) => hero.assign[j.id]).map((j) => ({ job: `${j.title}${HERO_JOBS.filter((x) => x.title === j.title).length > 1 ? ` ${HERO_JOBS.filter((x) => x.title === j.title).indexOf(j) + 1}` : ""}`, name: hero.assign[j.id]! }));
   return (
     <div className="max-w-sm space-y-2">
       <div className="flex items-center justify-between"><span className="font-display text-lg">Today's jobs</span>
@@ -107,11 +111,11 @@ export function JobsChart({ names }: { names: string[] }) {
         <textarea aria-label="Jobs, one per line" rows={6} className="w-full rounded-md border bg-background p-2 text-sm" value={jobs.join("\n")}
           onChange={(e) => setJobs(e.target.value.split("\n").map((j) => j.trimStart()).filter((j, i, all) => j || i === all.length - 1))} />
       ) : (
-        <ul className="space-y-1">{jobsFor(names, jobs.filter(Boolean), new Date()).map((j) => (
+        <ul className="space-y-1">{(heroRows.length ? heroRows : jobsFor(names, jobs.filter(Boolean), new Date())).map((j) => (
           <li key={j.job} className="flex justify-between gap-4 rounded-lg bg-muted px-3 py-1.5"><span className="font-bold">{j.job}</span><span>{j.name}</span></li>
         ))}</ul>
       )}
-      <p className="text-xs text-muted-foreground">Jobs move to the next student each school day.</p>
+      <p className="text-xs text-muted-foreground">{heroRows.length ? "Showing Hero Agency jobs — they update when students move jobs." : "Jobs move to the next student each school day."}</p>
     </div>
   );
 }
