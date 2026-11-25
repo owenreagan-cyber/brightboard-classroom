@@ -32,6 +32,8 @@ export const MUSIC_LIBRARY: LibraryItem[] = [
   { id: "bach", label: "Bach", emoji: "🎼", group: "Classical", query: "Johann Sebastian Bach", kind: "artist" },
   { id: "calm-piano", label: "Calm piano", emoji: "🌙", group: "Calm & acoustic", query: "peaceful piano", kind: "playlist" },
   { id: "acoustic-chill", label: "Acoustic chill", emoji: "🪕", group: "Calm & acoustic", query: "acoustic chill instrumental", kind: "playlist" },
+  { id: "lofi-anime", label: "Lofi anime study", emoji: "🍥", group: "Lofi study", query: "lofi anime study instrumental", kind: "playlist" },
+  { id: "lofi-study", label: "Lofi study beats", emoji: "📝", group: "Lofi study", query: "lofi study beats instrumental", kind: "playlist" },
   { id: "anime-piano", label: "Anime piano", emoji: "⚡", group: "Calm & acoustic", query: "anime piano instrumental", kind: "playlist" },
 ];
 
@@ -44,7 +46,9 @@ export async function resolveLibraryItem(item: LibraryItem): Promise<string> {
   });
   if (!r.ok) throw new Error(`Couldn't find ${item.label} on Spotify`);
   const j = await r.json();
-  const uri = (item.kind === "artist" ? j.artists?.items : j.playlists?.items)?.find(Boolean)?.uri as string | undefined;
+  const me = await myId();
+  // Never pick one of the teacher's own playlists.
+  const uri = (item.kind === "artist" ? j.artists?.items : j.playlists?.items)?.find((x: any) => x && x.owner?.id !== me)?.uri as string | undefined;
   if (!uri) throw new Error(`Couldn't find ${item.label} on Spotify`);
   resolved.set(item.id, uri);
   return uri;
@@ -165,6 +169,7 @@ export function initSpotifyPlayer() {
     player.addListener("player_state_changed", (s: any) => {
       if (!s) return;
       const t = s.track_window?.current_track;
+      if (t?.id && !s.paused) void guard(t.id, s.context?.uri ?? undefined).catch(() => player?.pause());
       setState({
         paused: s.paused,
         contextUri: s.context?.uri ?? undefined,
@@ -198,6 +203,43 @@ export const spotify = {
   prev: () => run(() => player?.previousTrack()),
   volume: (v: number) => run(() => player?.setVolume(v)),
 };
+
+// --- classroom safety: no explicit songs, no personal playlists ---
+/** Pure rule: a song may play only if it isn't explicit and the playlist isn't the teacher's own. */
+export function classroomBlock(t: { explicit: boolean }, ctx: { type: string; ownerId?: string | undefined } | null, me: string | null): string | null {
+  if (t.explicit) return "Skipped a song with explicit lyrics";
+  if (!ctx) return "Only school playlists can play here";
+  if (ctx.type === "playlist" && me && ctx.ownerId === me) return "Your personal playlists can't play on the board";
+  if (ctx.type !== "playlist" && ctx.type !== "artist" && ctx.type !== "album") return "Only school playlists can play here";
+  return null;
+}
+let meId: string | null = null;
+async function myId() {
+  if (meId) return meId;
+  const r = await fetch("https://api.spotify.com/v1/me", { headers: { Authorization: `Bearer ${await accessToken()}` } });
+  if (r.ok) meId = (await r.json()).id ?? null;
+  return meId;
+}
+async function getJson(path: string) {
+  const r = await fetch(`https://api.spotify.com/v1${path}`, { headers: { Authorization: `Bearer ${await accessToken()}` } });
+  return r.ok ? r.json() : null;
+}
+const checked = new Map<string, string | null>();
+async function guard(trackId: string, ctxUri: string | undefined) {
+  const key = `${trackId}|${ctxUri ?? ""}`;
+  let why = checked.get(key);
+  if (why === undefined) {
+    const t = await getJson(`/tracks/${trackId}`);
+    const [, type, id] = (ctxUri ?? "").split(":");
+    const ctx = !ctxUri || !type ? null : { type, ownerId: type === "playlist" ? (await getJson(`/playlists/${id}?fields=owner.id`))?.owner?.id : undefined };
+    why = classroomBlock({ explicit: t ? !!t.explicit : true }, ctx, await myId());
+    checked.set(key, why);
+  }
+  if (!why) return;
+  setState({ error: why });
+  if (why.startsWith("Skipped")) await player?.nextTrack();
+  else await player?.pause();
+}
 
 // --- present-mode autoplay ---
 let presenting = false;
