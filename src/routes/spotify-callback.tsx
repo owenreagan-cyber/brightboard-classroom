@@ -22,7 +22,7 @@ function SpotifyCallback() {
     const q = new URLSearchParams(window.location.search);
     const code = q.get("code");
     if (!code) { setError(q.get("error") ?? "Spotify didn't return a sign-in code."); return; }
-    finishSpotifyLogin(code).then((to) => window.location.replace(to)).catch((e) => setError(e.message));
+    finishSpotifyLogin(code).then((to) => { if (to === "close") { window.close(); setError("Spotify is connected — you can close this tab."); } else window.location.replace(to); }).catch((e) => setError(e.message));
   }, []);
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-3 p-6 text-center">

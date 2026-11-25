@@ -65,8 +65,16 @@ export async function startSpotifyLogin() {
   localStorage.setItem(K.ver, verifier);
   localStorage.setItem(K.ret, window.location.pathname + window.location.search);
   const q = new URLSearchParams({ client_id: cid, response_type: "code", redirect_uri: redirectUri(), scope: SCOPES, code_challenge_method: "S256", code_challenge: challenge });
-  window.location.href = `https://accounts.spotify.com/authorize?${q}`;
+  const url = `https://accounts.spotify.com/authorize?${q}`;
+  // Spotify refuses to load inside a frame (the editor preview), which shows a blank white page.
+  if (window.self !== window.top) {
+    localStorage.setItem(K.ret, "close");
+    if (!window.open(url, "_blank")) throw new Error("Allow pop-ups to connect Spotify");
+    return;
+  }
+  window.location.href = url;
 }
+if (typeof window !== "undefined") window.addEventListener("storage", (e) => { if (e.key === K.tok) emitAuth(); });
 
 function saveTokens(j: { access_token: string; refresh_token?: string; expires_in: number }, prevRefresh = "") {
   const t: Tokens = { access: j.access_token, refresh: j.refresh_token ?? prevRefresh, expires: Date.now() + (j.expires_in - 60) * 1000 };
