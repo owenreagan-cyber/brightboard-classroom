@@ -225,10 +225,11 @@ body { font-family: var(--font-body); }
 }
 
 /* Printable hero license cards */
-.license-card { width: 2.5in; height: 3.5in; break-inside: avoid; }
+.license-card { width: 2.125in; height: 3.375in; flex-shrink: 0; break-inside: avoid; }
 @media print {
   @page { margin: 0.3in; size: letter; }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   .no-print { display: none !important; }
-  .print-area { display: flex !important; flex-wrap: wrap; gap: 0.15in; justify-content: center; }
+  .hero-agency-page { padding: 0 !important; margin: 0 !important; max-width: none !important; }
+  .print-area { display: flex !important; flex-wrap: wrap; gap: 0.08333in; justify-content: center; }
 }

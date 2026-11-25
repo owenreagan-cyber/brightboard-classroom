@@ -1,12 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { ArrowLeft, BarChart3, Printer } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, BarChart3, Download, Loader2, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { displayNames } from "@/lib/rosters";
 import { HERO_JOBS, newHeroJobs, normalizeHeroJobs, validHeroJobs, type HeroJobsState } from "@/lib/hero-jobs";
 import { HeroJobs, LicenseCard } from "@/components/board/HeroJobs";
 import { usePersisted } from "@/components/board/games";
+import type { LicenseLayout } from "@/lib/hero-license-pdf";
 
 type Tab = "jobs" | "licenses";
 export const Route = createFileRoute("/_authenticated/hero-agency")({
@@ -14,9 +15,9 @@ export const Route = createFileRoute("/_authenticated/hero-agency")({
   head: () => ({
     meta: [
       { title: "Hero Agency Jobs — Hero Board" },
-      { name: "description", content: "Assign classroom hero jobs, track check-ins and hero points, and print license cards." },
+      { name: "description", content: "Assign classroom hero jobs, track check-ins and hero points, and download wallet-size student license PDFs." },
       { property: "og:title", content: "Hero Agency Jobs — Hero Board" },
-      { property: "og:description", content: "Assign classroom hero jobs, track check-ins and hero points, and print license cards." },
+      { property: "og:description", content: "Assign classroom hero jobs, track check-ins and hero points, and download wallet-size student license PDFs." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -31,13 +32,41 @@ function HeroAgency() {
   const [stored] = usePersisted<HeroJobsState>("hb-hero-jobs", newHeroJobs, validHeroJobs, true);
   const s = normalizeHeroJobs(stored);
   const [pick, setPick] = useState<string>("all");
+  const [layout, setLayout] = useState<LicenseLayout>("letter");
+  const [pdf, setPdf] = useState<Blob | null>(null);
+  const [pdfError, setPdfError] = useState("");
   useEffect(() => {
     void supabase.from("rosters").select("name, students").eq("name", "Homeroom").maybeSingle().then(({ data }) => setNames(displayNames(data?.students ?? [])));
   }, []);
-  const cards = HERO_JOBS.filter((j) => s.assign[j.id] && (pick === "all" || s.assign[j.id] === pick));
+  const licenses = useMemo(() => HERO_JOBS.flatMap(job => {
+    const name = stored.assign[job.id];
+    return name && (pick === "all" || name === pick) ? [{ job, name }] : [];
+  }), [stored.assign, pick]);
+  useEffect(() => {
+    let cancelled = false;
+    setPdf(null); setPdfError("");
+    if (tab !== "licenses" || !licenses.length) return;
+    void (async () => {
+      try {
+        const [{ buildLicensePdf }, response] = await Promise.all([
+          import("@/lib/hero-license-pdf"), fetch("/downloads/hero-agency-wallet-templates.pdf"),
+        ]);
+        if (!response.ok) throw new Error("License artwork could not be loaded. Please try again.");
+        const bytes = await buildLicensePdf(licenses, await response.arrayBuffer(), layout);
+        if (!cancelled) setPdf(new Blob([new Uint8Array(bytes)], { type: "application/pdf" }));
+      } catch {
+        if (!cancelled) setPdfError("The license PDF could not be prepared. Please reopen License cards to try again.");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [licenses, layout, tab]);
+  const [deliver, setDeliver] = useState<((blob: Blob, filename: string) => Promise<void>) | null>(null);
+  useEffect(() => {
+    void import("@/lib/hero-license-pdf").then(module => setDeliver(() => module.deliverLicensePdf));
+  }, []);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-4 p-4 sm:p-8">
+    <div className="hero-agency-page mx-auto max-w-5xl space-y-4 p-4 sm:p-8">
       <div className="no-print flex flex-wrap items-center gap-3">
         <Button asChild variant="outline"><Link to="/board" search={{ slide: undefined }}><ArrowLeft className="h-4 w-4" /> Board</Link></Button>
         <h1 className="font-display text-3xl">⚡ Hero Agency</h1>
@@ -56,12 +85,21 @@ function HeroAgency() {
               <option value="all">Everyone with a job</option>
               {HERO_JOBS.map((j) => s.assign[j.id]).filter((n): n is string => !!n).map((n) => <option key={n}>{n}</option>)}
             </select>
-            <Button disabled={!cards.length} onClick={() => window.print()}><Printer className="h-4 w-4" /> Print {cards.length} card{cards.length === 1 ? "" : "s"}</Button>
-            <span className="text-sm text-muted-foreground">Wallet size (2.5 × 3.5 in), 9 per page.</span>
+            <select aria-label="PDF page size" className="h-9 rounded-md border bg-background px-2 text-sm" value={layout} onChange={e => setLayout(e.target.value === "cards" ? "cards" : "letter")}>
+              <option value="letter">Letter sheets · 9 per page</option>
+              <option value="cards">Individual wallet pages</option>
+            </select>
+            <Button disabled={!pdf || !deliver} onClick={() => { if (pdf && deliver) void deliver(pdf, `hero-agency-wallet-${layout}.pdf`); }}>
+              {!pdf && licenses.length > 0 && !pdfError ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              {!pdf && licenses.length > 0 && !pdfError ? "Preparing PDF…" : "Download PDF"}
+            </Button>
+            <Button variant="outline" disabled={!licenses.length} onClick={() => window.print()}><Printer className="h-4 w-4" /> Print</Button>
+            <span className="w-full text-sm text-muted-foreground">Wallet size: 2.125 × 3.375 in. Print at Actual size / 100%; cut along the borders.</span>
           </div>
-          {!cards.length && <p className="no-print text-muted-foreground">No jobs assigned yet. Open "Jobs & points" and tap "Fill empty jobs".</p>}
+          {pdfError && <p role="alert" className="no-print text-sm text-destructive">{pdfError}</p>}
+          {!licenses.length && <p className="no-print text-muted-foreground">No jobs assigned yet. Open "Jobs & points" and tap "Fill empty jobs".</p>}
           <div className="print-area flex flex-wrap justify-center gap-3">
-            {cards.map((j) => <LicenseCard key={j.id} job={j} name={s.assign[j.id]!} />)}
+            {licenses.map(({ job, name }) => <LicenseCard key={job.id} job={job} name={name} />)}
           </div>
         </>
       )}

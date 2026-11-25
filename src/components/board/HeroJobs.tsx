@@ -85,16 +85,16 @@ export function HeroJobs({ names, wide = false }: { names: string[]; wide?: bool
   );
 }
 
-/** Wallet-size hero license for one student's job, sized for printing (2.5 × 3.5 in). */
+/** Standard wallet-size hero license (2.125 × 3.375 inches). */
 export function LicenseCard({ job, name }: { job: HeroJob; name: string }) {
   const hero = mentorFor(job);
   return (
     <div className="license-card flex flex-col overflow-hidden rounded-xl border-4 border-foreground bg-card text-card-foreground">
-      <div className="bg-foreground px-2 py-1 text-center font-display text-[11px] tracking-widest text-background">HERO AGENCY LICENSE</div>
-      <img src={heroImg(hero)} alt={HERO_NAMES[hero]} className="h-[1.55in] w-full object-cover object-top" />
+      <div className="bg-foreground px-2 py-1 text-center font-display text-[9px] text-background">HERO AGENCY LICENSE</div>
+      <img src={heroImg(hero)} alt={HERO_NAMES[hero]} className="h-[1.15in] w-full object-cover object-top" />
       <div className="flex flex-1 flex-col gap-0.5 p-2">
-        <div className="font-display text-lg leading-tight text-primary">{name}</div>
-        <div className="font-display text-sm leading-tight">{job.title}</div>
+        <div className="font-display text-base leading-tight text-primary">{name}</div>
+        <div className="font-display text-xs leading-tight">{job.title}</div>
         <div className="text-[9px] leading-snug">{JOB_PROTOCOLS[job.title]}</div>
         <div className="mt-auto flex justify-between text-[9px] font-bold"><span>Mentor: {HERO_NAMES[hero]}</span><span>{job.gp} pts/week</span></div>
       </div>

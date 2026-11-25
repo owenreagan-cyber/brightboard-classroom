@@ -14,3 +14,4 @@
 - [x] Hero Agency page (/hero-agency) with printable license cards; Jobs chart follows Hero Agency jobs
 - [ ] Print and hand out Hero Agency license cards — blocked: requires the teacher's printer and physical distribution
 - [x] Add Hero Agency reports with job history, check-ins, and points over past weeks; verify signed-in persistence
+- [x] Prepare true wallet-size Hero Agency PDF downloads with saved student names, print sheets, and visual verification.
