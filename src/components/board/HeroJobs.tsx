@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { usePersisted } from "./games";
-import { HERO_JOBS, JOB_PROTOCOLS, autoAssign, mentorFor, newHeroJobs, pay, rotate, type HeroJob, type HeroJobsState } from "@/lib/hero-jobs";
+import { HERO_JOBS, JOB_PROTOCOLS, autoAssign, mentorFor, newHeroJobs, normalizeHeroJobs, pay, rotate, validHeroJobs, type HeroJob, type HeroJobsState } from "@/lib/hero-jobs";
 
 const IMGS = import.meta.glob("@/assets/heroes/*.webp", { eager: true, import: "default" }) as Record<string, string>;
 export const heroImg = (id: string) => Object.entries(IMGS).find(([k]) => k.endsWith(`/${id}.webp`))?.[1] ?? "";
@@ -10,7 +10,6 @@ export const HERO_NAMES: Record<string, string> = {
   cementoss: "Cementoss", allmight: "All Might", uravity: "Uravity", froppy: "Froppy", creati: "Creati", mirko: "Mirko", mina: "Pinky", nejire: "Nejire", jiro: "Earphone Jack", mtlady: "Mt. Lady", mandalay: "Mandalay",
 };
 const btn = "rounded-full px-3 py-1.5 text-sm font-bold disabled:opacity-40";
-const valid = (v: unknown) => !!v && typeof v === "object" && typeof (v as HeroJobsState).assign === "object" && typeof (v as HeroJobsState).checkIns === "object";
 
 function speak(text: string) {
   if (!("speechSynthesis" in window)) return;
@@ -21,7 +20,8 @@ function speak(text: string) {
 
 /** Hero Agency jobs: each job has a hero mentor, a read-aloud briefing, check-ins and weekly hero points. */
 export function HeroJobs({ names, wide = false }: { names: string[]; wide?: boolean }) {
-  const [s, set] = usePersisted<HeroJobsState>("hb-hero-jobs", newHeroJobs, valid, true);
+  const [stored, set] = usePersisted<HeroJobsState>("hb-hero-jobs", newHeroJobs, validHeroJobs, true);
+  const s = normalizeHeroJobs(stored);
   const [open, setOpen] = useState<HeroJob | null>(null);
   const [tab, setTab] = useState<"jobs" | "pay">("jobs");
   const [confirm, setConfirm] = useState(false);

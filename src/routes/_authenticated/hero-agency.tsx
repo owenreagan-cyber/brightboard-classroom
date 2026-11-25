@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Printer } from "lucide-react";
+import { ArrowLeft, BarChart3, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { displayNames } from "@/lib/rosters";
-import { HERO_JOBS, newHeroJobs, type HeroJobsState } from "@/lib/hero-jobs";
+import { HERO_JOBS, newHeroJobs, normalizeHeroJobs, validHeroJobs, type HeroJobsState } from "@/lib/hero-jobs";
 import { HeroJobs, LicenseCard } from "@/components/board/HeroJobs";
 import { usePersisted } from "@/components/board/games";
 
@@ -28,7 +28,8 @@ function HeroAgency() {
   const { tab = "jobs" } = Route.useSearch();
   const navigate = Route.useNavigate();
   const [names, setNames] = useState<string[]>([]);
-  const [s] = usePersisted<HeroJobsState>("hb-hero-jobs", newHeroJobs, (v) => !!v && typeof v === "object", true);
+  const [stored] = usePersisted<HeroJobsState>("hb-hero-jobs", newHeroJobs, validHeroJobs, true);
+  const s = normalizeHeroJobs(stored);
   const [pick, setPick] = useState<string>("all");
   useEffect(() => {
     void supabase.from("rosters").select("name, students").eq("name", "Homeroom").maybeSingle().then(({ data }) => setNames(displayNames(data?.students ?? [])));
@@ -40,9 +41,10 @@ function HeroAgency() {
       <div className="no-print flex flex-wrap items-center gap-3">
         <Button asChild variant="outline"><Link to="/board" search={{ slide: undefined }}><ArrowLeft className="h-4 w-4" /> Board</Link></Button>
         <h1 className="font-display text-3xl">⚡ Hero Agency</h1>
-        <div className="ml-auto flex gap-2">
+        <div className="flex flex-wrap gap-2 sm:ml-auto">
           <Button variant={tab === "jobs" ? "default" : "outline"} onClick={() => navigate({ search: { tab: "jobs" } })}>Jobs & points</Button>
           <Button variant={tab === "licenses" ? "default" : "outline"} onClick={() => navigate({ search: { tab: "licenses" } })}>🪪 License cards</Button>
+          <Button asChild variant="outline"><Link to="/hero-agency/reports"><BarChart3 className="h-4 w-4" /> Reports</Link></Button>
         </div>
       </div>
       {tab === "jobs" ? (

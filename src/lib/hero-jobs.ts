@@ -31,31 +31,95 @@ export function mentorFor(job: HeroJob): string {
   return pool[Math.max(0, slot) % pool.length]!;
 }
 
-export type HeroJobsState = { assign: Record<string, string>; checkIns: Record<string, number> };
-export const newHeroJobs = (): HeroJobsState => ({ assign: {}, checkIns: {} });
+export type HeroWeek = { weekStart: string; assign: Record<string, string>; checkIns: Record<string, number> };
+export type HeroJobsState = HeroWeek & { history: HeroWeek[] };
+export type HeroReportWeek = { weekStart: string; job: HeroJob | null; checkIns: number; points: number };
+export type HeroStudentReport = { name: string; totalCheckIns: number; totalPoints: number; weeks: HeroReportWeek[] };
+
+/** Local Monday key, matching the teacher's school week rather than a UTC week. */
+export function heroWeekStart(date = new Date()): string {
+  const d = new Date(date);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+export function nextHeroWeek(key: string): string {
+  const d = new Date(`${key}T12:00:00`);
+  d.setDate(d.getDate() + 7);
+  return heroWeekStart(d);
+}
+
+export const newHeroJobs = (date = new Date()): HeroJobsState => ({ weekStart: heroWeekStart(date), assign: {}, checkIns: {}, history: [] });
+
+/** Saved states from before reports existed keep their jobs and gain an empty history. */
+export function normalizeHeroJobs(s: HeroJobsState, date = new Date()): HeroJobsState {
+  return {
+    weekStart: typeof s.weekStart === "string" ? s.weekStart : heroWeekStart(date),
+    assign: s.assign ?? {},
+    checkIns: s.checkIns ?? {},
+    history: Array.isArray(s.history) ? s.history : [],
+  };
+}
+
+export function validHeroJobs(v: unknown): v is HeroJobsState {
+  return !!v && typeof v === "object" && typeof (v as HeroJobsState).assign === "object" && typeof (v as HeroJobsState).checkIns === "object";
+}
+
+const snapshot = (s: HeroJobsState): HeroWeek => ({ weekStart: s.weekStart, assign: { ...s.assign }, checkIns: { ...s.checkIns } });
 
 /** Fill empty jobs with students who don't have one yet, in class-list order. */
 export function autoAssign(s: HeroJobsState, names: string[]): HeroJobsState {
-  const assign = Object.fromEntries(Object.entries(s.assign).filter(([, n]) => names.includes(n)));
+  const current = normalizeHeroJobs(s);
+  const assign = Object.fromEntries(Object.entries(current.assign).filter(([, n]) => names.includes(n)));
   const free = names.filter((n) => !Object.values(assign).includes(n));
   for (const j of HERO_JOBS) if (!assign[j.id] && free.length) assign[j.id] = free.shift()!;
-  return { ...s, assign };
+  return { ...current, assign };
 }
 
-/** New week: everyone moves down one job; students without a job step in at the top. Check-ins reset. */
+/** New week: archive the old week, move everyone down one job, then reset check-ins. */
 export function rotate(s: HeroJobsState, names: string[]): HeroJobsState {
-  const order = [...HERO_JOBS.map((j) => s.assign[j.id]).filter((n): n is string => !!n && names.includes(n))];
+  const current = normalizeHeroJobs(s);
+  const order = [...HERO_JOBS.map((j) => current.assign[j.id]).filter((n): n is string => !!n && names.includes(n))];
   const waiting = names.filter((n) => !order.includes(n));
   const line = [...waiting, ...order];
   // Move the last job-holders to the back of the line so different students get a turn each week.
   const shifted = line.length ? [...line.slice(-1), ...line.slice(0, -1)] : [];
   const assign: Record<string, string> = {};
   HERO_JOBS.forEach((j, i) => { if (shifted[i]) assign[j.id] = shifted[i]!; });
-  return { assign, checkIns: {} };
+  const hasWork = Object.keys(current.assign).length > 0 || Object.keys(current.checkIns).length > 0;
+  return {
+    weekStart: nextHeroWeek(current.weekStart),
+    assign,
+    checkIns: {},
+    history: hasWork ? [...current.history, snapshot(current)] : current.history,
+  };
 }
 
-/** Hero points earned this week: the job's points after 3 or more check-ins. */
-export function pay(s: HeroJobsState, name: string): number {
+/** Hero points earned in a week: the job's points after 3 or more check-ins. */
+export function pay(s: HeroWeek, name: string): number {
   const job = HERO_JOBS.find((j) => s.assign[j.id] === name);
   return job && (s.checkIns[name] ?? 0) >= 3 ? job.gp : 0;
+}
+
+/** Newest weeks first, including the live week, with per-student totals for the selected range. */
+export function heroReports(s: HeroJobsState, names: string[], weekCount = 8): { weeks: HeroWeek[]; students: HeroStudentReport[] } {
+  const current = normalizeHeroJobs(s);
+  const limit = Math.max(1, Math.min(52, Math.floor(weekCount)));
+  const weeks = [...current.history, snapshot(current)]
+    .sort((a, b) => b.weekStart.localeCompare(a.weekStart))
+    .slice(0, limit);
+  const students = names.map((name) => {
+    const reportWeeks = weeks.map((week) => {
+      const job = HERO_JOBS.find((j) => week.assign[j.id] === name) ?? null;
+      return { weekStart: week.weekStart, job, checkIns: week.checkIns[name] ?? 0, points: pay(week, name) };
+    });
+    return {
+      name,
+      weeks: reportWeeks,
+      totalCheckIns: reportWeeks.reduce((sum, week) => sum + week.checkIns, 0),
+      totalPoints: reportWeeks.reduce((sum, week) => sum + week.points, 0),
+    };
+  });
+  return { weeks, students };
 }

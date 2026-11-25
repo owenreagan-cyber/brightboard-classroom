@@ -18,6 +18,7 @@ import { Route as AuthenticatedHeroAgencyRouteImport } from './routes/_authentic
 import { Route as AuthenticatedMusicRouteImport } from './routes/_authenticated/music'
 import { Route as AuthenticatedRemoteRouteImport } from './routes/_authenticated/remote'
 import { Route as AuthenticatedScheduleRouteImport } from './routes/_authenticated/schedule'
+import { Route as AuthenticatedHeroAgencyReportsRouteImport } from './routes/_authenticated/hero-agency_.reports'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -63,6 +64,12 @@ const AuthenticatedScheduleRoute = AuthenticatedScheduleRouteImport.update({
   path: '/schedule',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedHeroAgencyReportsRoute =
+  AuthenticatedHeroAgencyReportsRouteImport.update({
+    id: '/hero-agency_/reports',
+    path: '/hero-agency/reports',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/music': typeof AuthenticatedMusicRoute
   '/remote': typeof AuthenticatedRemoteRoute
   '/schedule': typeof AuthenticatedScheduleRoute
+  '/hero-agency/reports': typeof AuthenticatedHeroAgencyReportsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -83,6 +91,7 @@ export interface FileRoutesByTo {
   '/music': typeof AuthenticatedMusicRoute
   '/remote': typeof AuthenticatedRemoteRoute
   '/schedule': typeof AuthenticatedScheduleRoute
+  '/hero-agency/reports': typeof AuthenticatedHeroAgencyReportsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -95,6 +104,7 @@ export interface FileRoutesById {
   '/_authenticated/music': typeof AuthenticatedMusicRoute
   '/_authenticated/remote': typeof AuthenticatedRemoteRoute
   '/_authenticated/schedule': typeof AuthenticatedScheduleRoute
+  '/_authenticated/hero-agency_/reports': typeof AuthenticatedHeroAgencyReportsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/music'
     | '/remote'
     | '/schedule'
+    | '/hero-agency/reports'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/music'
     | '/remote'
     | '/schedule'
+    | '/hero-agency/reports'
   id:
     | '__root__'
     | '/'
@@ -128,6 +140,7 @@ export interface FileRouteTypes {
     | '/_authenticated/music'
     | '/_authenticated/remote'
     | '/_authenticated/schedule'
+    | '/_authenticated/hero-agency_/reports'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -201,6 +214,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedScheduleRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/hero-agency_/reports': {
+      id: '/_authenticated/hero-agency_/reports'
+      path: '/hero-agency/reports'
+      fullPath: '/hero-agency/reports'
+      preLoaderRoute: typeof AuthenticatedHeroAgencyReportsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -211,6 +231,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMusicRoute: typeof AuthenticatedMusicRoute
   AuthenticatedRemoteRoute: typeof AuthenticatedRemoteRoute
   AuthenticatedScheduleRoute: typeof AuthenticatedScheduleRoute
+  AuthenticatedHeroAgencyReportsRoute: typeof AuthenticatedHeroAgencyReportsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -220,6 +241,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMusicRoute: AuthenticatedMusicRoute,
   AuthenticatedRemoteRoute: AuthenticatedRemoteRoute,
   AuthenticatedScheduleRoute: AuthenticatedScheduleRoute,
+  AuthenticatedHeroAgencyReportsRoute: AuthenticatedHeroAgencyReportsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

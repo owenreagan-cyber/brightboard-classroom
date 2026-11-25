@@ -12,3 +12,5 @@
 - [ ] One shared look for all timers (deferred)
 - [x] Hero Agency jobs tool (rebuilt from Classroom Companion)
 - [x] Hero Agency page (/hero-agency) with printable license cards; Jobs chart follows Hero Agency jobs
+- [ ] Print and hand out Hero Agency license cards — blocked: requires the teacher's printer and physical distribution
+- [x] Add Hero Agency reports with job history, check-ins, and points over past weeks; verify signed-in persistence
