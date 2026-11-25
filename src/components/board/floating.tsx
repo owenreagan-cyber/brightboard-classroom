@@ -48,7 +48,7 @@ export function FloatingLayer({ assessment = false, names = [] }: { assessment?:
   useEffect(() => { if (ready) localStorage.setItem("hb-floating", JSON.stringify(items)); }, [items, ready]);
   const front = (id: string) => setItems((all) => all.map((i) => (i.id === id ? { ...i, z: ++top.current } : i)));
   const add = (kind: Kind) => {
-    setItems((all) => [...all, { id: uid(), kind, x: 120 + all.length * 30, y: 120 + all.length * 30, z: ++top.current }]);
+    setItems((all) => [...all, { id: uid(), kind, x: Math.min(120 + all.length * 30, Math.max(8, window.innerWidth - 480)), y: 120 + all.length * 30, z: ++top.current }]);
     setMenu(false);
   };
   return (
@@ -57,7 +57,7 @@ export function FloatingLayer({ assessment = false, names = [] }: { assessment?:
         <Floating key={it.id} item={it} onFront={() => front(it.id)}
           onMove={(x, y) => setItems((all) => all.map((i) => (i.id === it.id ? { ...i, x, y } : i)))}
           onClose={() => { localStorage.removeItem(`hb-floating-state:${it.id}`); setItems((all) => all.filter((i) => i.id !== it.id)); }}>
-          {it.kind === "stagedBath" || it.kind === "stagedLunch" ? <div style={{ zoom: 0.5, width: 900 }}><StagedWidget w={it.kind === "stagedBath" ? BATH : LUNCH} /></div> : it.kind === "rng" ? <RandomNumber /> : it.kind === "star" ? <MysteryStar names={names} /> : it.kind === "prize" ? <PrizeBoard /> : it.kind === "noise" ? <NoiseMeter /> : it.kind === "signals" ? <Signals /> : it.kind === "timer" ? <QuickTimer id={it.id} /> : <TwoPhase id={it.id} />}
+          {it.kind === "stagedBath" || it.kind === "stagedLunch" ? <div style={{ zoom: 0.5, width: "min(900px, calc((100vw - 56px) * 2))" }}><StagedWidget w={it.kind === "stagedBath" ? BATH : LUNCH} /></div> : it.kind === "rng" ? <RandomNumber /> : it.kind === "star" ? <MysteryStar names={names} /> : it.kind === "prize" ? <PrizeBoard /> : it.kind === "noise" ? <NoiseMeter /> : it.kind === "signals" ? <Signals /> : it.kind === "timer" ? <QuickTimer id={it.id} /> : <TwoPhase id={it.id} />}
         </Floating>
       ))}
       <div className="pointer-events-auto absolute bottom-4 right-4 flex flex-col items-end gap-2">
@@ -78,7 +78,7 @@ export function FloatingLayer({ assessment = false, names = [] }: { assessment?:
 function Floating({ item, onFront, onMove, onClose, children }: { item: Item; onFront: () => void; onMove: (x: number, y: number) => void; onClose: () => void; children: ReactNode }) {
   const start = useRef<{ px: number; py: number; x: number; y: number } | null>(null);
   return (
-    <div className="pointer-events-auto absolute w-max min-w-[340px] rounded-3xl border-4 border-foreground bg-card shadow-2xl"
+    <div className="pointer-events-auto absolute w-max min-w-[min(340px,calc(100vw-16px))] max-w-[calc(100vw-16px)] rounded-3xl border-4 border-foreground bg-card shadow-2xl"
       style={{ left: item.x, top: item.y, zIndex: item.z }} onPointerDown={onFront}>
       <div className="flex items-center rounded-t-[20px] bg-foreground text-background">
         <div className="flex-1 cursor-grab touch-none select-none py-1.5 text-center text-xs font-bold tracking-widest active:cursor-grabbing"
