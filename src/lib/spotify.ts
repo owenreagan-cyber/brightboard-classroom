@@ -198,3 +198,25 @@ export const spotify = {
   prev: () => run(() => player?.previousTrack()),
   volume: (v: number) => run(() => player?.setVolume(v)),
 };
+
+// --- present-mode autoplay ---
+let presenting = false;
+const played = new Set<string>();
+const presentListeners = new Set<() => void>();
+/** Called by the board when present mode starts/stops; leaving pauses the music. */
+export function setSpotifyPresenting(on: boolean) {
+  if (presenting === on) return;
+  presenting = on;
+  played.clear();
+  if (!on && !state.paused) void spotify.toggle();
+  presentListeners.forEach((l) => l());
+}
+export function useSpotifyPresenting() {
+  return useSyncExternalStore((l) => { presentListeners.add(l); return () => presentListeners.delete(l); }, () => presenting, () => false);
+}
+/** Start a playlist once per present session. */
+export function autoplayOnce(uri: string) {
+  if (!presenting || played.has(uri) || state.status !== "ready" || state.contextUri === uri) return;
+  played.add(uri);
+  void spotify.playContext(uri, true);
+}

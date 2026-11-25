@@ -6,7 +6,7 @@ export type Widget =
   | { id: string; type: "sequence"; start: string; steps: SequenceStep[] }
   | { id: string; type: "picker" }
   | { id: string; type: "symbols"; symbols: string[] }
-  | { id: string; type: "spotify"; url: string }
+  | { id: string; type: "spotify"; url: string; autoplay?: boolean }
   | { id: string; type: "clock" }
   | { id: string; type: "lesson"; subject: string }
   | { id: string; type: "staged"; label: string; start: string; end?: string | undefined; gapMin: number; groups: { name: string; students: string[] }[]; finale: { time: string; label: string }[] };

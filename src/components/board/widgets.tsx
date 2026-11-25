@@ -7,7 +7,7 @@ import {
   stepStartLabel,
   type Widget,
 } from "@/lib/board";
-import { initSpotifyPlayer, MUSIC_LIBRARY, resolveLibraryItem, spotify, spotifyContextUri, useSpotifyConnected, useSpotifyPlayer } from "@/lib/spotify";
+import { autoplayOnce, useSpotifyPresenting, initSpotifyPlayer, MUSIC_LIBRARY, resolveLibraryItem, spotify, spotifyContextUri, useSpotifyConnected, useSpotifyPlayer } from "@/lib/spotify";
 import { toast } from "sonner";
 import { useTodayAgenda } from "@/lib/school-sync";
 import { ymd } from "@/lib/calendar";
@@ -191,7 +191,7 @@ export function PickerWidget({ names }: { names: string[] }) {
 
 export function SpotifyWidget({ w }: { w: Extract<Widget, { type: "spotify" }> }) {
   const connected = useSpotifyConnected();
-  if (connected) return <SpotifyPremium url={w.url} />;
+  if (connected) return <SpotifyPremium url={w.url} autoplay={w.autoplay !== false} />;
   const src = spotifyEmbedUrl(w.url);
   if (!src)
     return (
@@ -207,10 +207,12 @@ export function SpotifyWidget({ w }: { w: Extract<Widget, { type: "spotify" }> }
   );
 }
 
-function SpotifyPremium({ url }: { url: string }) {
+function SpotifyPremium({ url, autoplay }: { url: string; autoplay: boolean }) {
   const p = useSpotifyPlayer();
+  const presenting = useSpotifyPresenting();
   useEffect(() => initSpotifyPlayer(), []);
   const uri = spotifyContextUri(url);
+  useEffect(() => { if (autoplay && uri && presenting && p.status === "ready") autoplayOnce(uri); }, [autoplay, uri, presenting, p.status]);
   const onPlaylist = !!uri && p.contextUri === uri;
   return (
     <div className={card}>

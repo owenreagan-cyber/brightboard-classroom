@@ -163,6 +163,10 @@ function WidgetFields({ w, onChange }: { w: Widget; onChange: (w: Widget) => voi
     return (
       <div className="space-y-2">
         <Input placeholder="https://open.spotify.com/playlist/..." value={w.url} onChange={(e) => onChange({ ...w, url: e.target.value })} />
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={w.autoplay !== false} onChange={(e) => onChange({ ...w, autoplay: e.target.checked })} />
+          Play automatically when presenting
+        </label>
         <SpotifySetup />
       </div>
     );

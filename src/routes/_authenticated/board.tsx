@@ -1,3 +1,4 @@
+import { setSpotifyPresenting } from "@/lib/spotify";
 import { CLASSES, DEFAULT_ROSTERS, classFor, displayNames, upgradeRoster, type ClassName } from "@/lib/rosters";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -45,6 +46,7 @@ function Board() {
   const [rosterOpen, setRosterOpen] = useState(false);
   const [rosterText, setRosterText] = useState("");
   const [presenting, setPresenting] = useState(false);
+  useEffect(() => setSpotifyPresenting(presenting), [presenting]);
   const [importOpen, setImportOpen] = useState(false);
   const idx = Math.min(Math.max(0, (slideParam ?? 1) - 1), Math.max(0, (slides?.length ?? 1) - 1));
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
