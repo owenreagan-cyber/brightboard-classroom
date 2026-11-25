@@ -106,3 +106,11 @@ describe("block countdown", () => {
   it("is off on weekends", () => expect(blockCountdown(new Date(2026, 10, 14, 9, 0), _B)).toBeNull());
   it("after dismissal ends there is nothing", () => expect(blockCountdown(new Date(2026, 10, 16, 16, 0), _B)).toBeNull());
 });
+
+import { guessFolder } from "./library";
+describe("guessFolder", () => {
+  it("files Morning Message under Homeroom", () => expect(guessFolder("Morning Message")).toBe("Homeroom"));
+  it("matches subject names", () => expect(guessFolder("Math Welcome")).toBe("Math"));
+  it("matches a plain subject", () => expect(guessFolder("Spelling practice")).toBe("Spelling"));
+  it("returns null when nothing matches", () => expect(guessFolder("Fun Friday")).toBeNull());
+});

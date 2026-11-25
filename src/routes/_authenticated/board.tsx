@@ -11,7 +11,7 @@ import { ScaledSlide, SlideView } from "@/components/board/SlideView";
 import { FloatingLayer } from "@/components/board/floating";
 import { SlideEditor } from "@/components/board/SlideEditor";
 import { formatSec, templateSlides, type Slide, type SlideData } from "@/lib/board";
-import { DAYS, FOLDERS, applyToAllDays, blockCountdown, suggest, exportLibrary, isAssessment, toBoardJson, type Folder } from "@/lib/library";
+import { DAYS, FOLDERS, applyToAllDays, guessFolder, blockCountdown, suggest, exportLibrary, isAssessment, toBoardJson, type Folder } from "@/lib/library";
 import { ImportDialog, LibraryList, StagedBadge, SuggestionBar, download } from "@/components/board/Library";
 import mascot from "@/assets/mascot-hero.png";
 import { cleanTheme, setSubjectThemes } from "@/lib/subject-theme";
@@ -39,6 +39,7 @@ function Board() {
   const navigate = useNavigate({ from: "/board" });
   const { slide: slideParam } = Route.useSearch();
   const [slides, setSlides] = useState<Slide[] | null>(null);
+  const [pane, setPane] = useState<"list" | "slide" | "edit">("slide");
   const [rosters, setRosters] = useState<Record<string, { id: string; students: string[] }>>({});
   const [rosterClass, setRosterClass] = useState<ClassName>("Homeroom");
   const [rosterOpen, setRosterOpen] = useState(false);
@@ -198,13 +199,18 @@ function Board() {
         </div>
       </header>
 
+      <div className="flex border-b bg-card md:hidden" role="tablist" aria-label="Board sections">
+        {([["list", "Boards"], ["slide", "Slide"], ["edit", "Edit"]] as const).map(([k, l]) => (
+          <button key={k} role="tab" aria-selected={pane === k} onClick={() => setPane(k)} className={`flex-1 py-2 text-sm font-bold ${pane === k ? "border-b-4 border-primary text-primary" : "text-muted-foreground"}`}>{l}</button>
+        ))}
+      </div>
       <div className="flex min-h-0 flex-1">
-        <aside className="w-56 shrink-0 space-y-3 overflow-y-auto border-r bg-card p-3">
-          <LibraryList slides={slides} currentId={current.id} names={names} onOpen={(s) => go(slides.indexOf(s))} onCreateWeek={createWeek} />
+        <aside className={`${pane === "list" ? "block" : "hidden"} w-full shrink-0 space-y-3 overflow-y-auto border-r bg-card p-3 pb-24 md:block md:w-56`}>
+          <LibraryList slides={slides} currentId={current.id} names={names} onOpen={(s) => { go(slides.indexOf(s)); setPane("slide"); }} onCreateWeek={createWeek} />
           <Button variant="secondary" className="w-full" onClick={() => addSlide()}><Plus className="h-4 w-4" /> New slide</Button>
         </aside>
 
-        <main className="flex min-w-0 flex-1 flex-col p-4 gap-3">
+        <main className={`${pane === "slide" ? "flex" : "hidden"} min-w-0 flex-1 flex-col gap-3 overflow-y-auto p-3 pb-24 md:flex md:p-4`}>
           <div className="flex flex-wrap items-center gap-2">
             <Button size="sm" variant="outline" onClick={() => move(-1)}><ChevronLeft className="h-4 w-4" /> Move up</Button>
             <Button size="sm" variant="outline" onClick={() => move(1)}>Move down <ChevronRight className="h-4 w-4" /></Button>
@@ -220,20 +226,23 @@ function Board() {
             </select>
             <Button size="sm" variant="outline" onClick={applyAll}><Layers className="h-4 w-4" /> Apply this layout to all days</Button>
             {current.data.staged && <><StagedBadge /><Button size="sm" onClick={() => save({ ...current, data: { ...current.data, staged: false } })}><Check className="h-4 w-4" /> Approve</Button></>}
+            {!current.data.folder && guessFolder(`${current.title} ${current.data.heading ?? ""}`) && (
+              <Button size="sm" onClick={() => save({ ...current, data: { ...current.data, folder: guessFolder(`${current.title} ${current.data.heading ?? ""}`)! } })}>File under {guessFolder(`${current.title} ${current.data.heading ?? ""}`)}</Button>
+            )}
             {isAssessment(current.data) && <span className="rounded-full bg-foreground px-2 py-0.5 text-xs font-bold text-background">🔒 Assessment Mode</span>}
           </div>
           <SuggestionBar slides={slides} onOpen={(s) => go(slides.indexOf(s))} />
-          <ScaledSlide className="flex-1 rounded-2xl shadow-xl"><SlideView data={current.data} names={names} /></ScaledSlide>
+          <ScaledSlide className="aspect-video w-full shrink-0 rounded-2xl shadow-xl md:aspect-auto md:flex-1"><SlideView data={current.data} names={names} /></ScaledSlide>
         </main>
 
-        <aside className="w-80 shrink-0 overflow-y-auto border-l bg-card">
+        <aside className={`${pane === "edit" ? "block" : "hidden"} w-full shrink-0 overflow-y-auto border-l bg-card pb-24 md:block md:w-80`}>
           <SlideEditor key={current.id} slide={current} onChange={save} />
         </aside>
       </div>
 
       {presenting && <Presenter slides={slides} idx={idx} names={names} go={go} onExit={() => { setPresenting(false); if (document.fullscreenElement) document.exitFullscreen(); }} />}
 
-      <FloatingLayer assessment={isAssessment(current.data)} names={names} />
+      <FloatingLayer assessment={isAssessment(current.data)} names={names} large={presenting} />
       <ImportDialog open={importOpen} onOpenChange={setImportOpen} onImport={importBoards} />
 
       <Dialog open={rosterOpen} onOpenChange={setRosterOpen}>

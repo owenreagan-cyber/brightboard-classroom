@@ -197,7 +197,7 @@ export function SpotifyWidget({ w }: { w: Extract<Widget, { type: "spotify" }> }
     return (
       <div className={card}>
         <div className="slide-kicker text-muted-foreground">Class music 🎵</div>
-        <div className="slide-caption mt-3">Paste a Spotify playlist link in the editor.</div>
+        <div className="slide-caption mt-3">Connect Spotify in this slide&apos;s Class music tool to pick from the music library, or paste a playlist link.</div>
       </div>
     );
   return (

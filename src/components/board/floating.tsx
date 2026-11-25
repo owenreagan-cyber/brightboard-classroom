@@ -32,7 +32,7 @@ function beep() {
 }
 
 /** Floating, draggable classroom tools that sit above any slide (editor and present mode). */
-export function FloatingLayer({ assessment = false, names = [] }: { assessment?: boolean; names?: string[] }) {
+export function FloatingLayer({ assessment = false, names = [], large = false }: { assessment?: boolean; names?: string[]; large?: boolean }) {
   const [items, setItems] = useState<Item[]>([]);
   const [menu, setMenu] = useState(false);
   const top = useRef(10);
@@ -48,19 +48,24 @@ export function FloatingLayer({ assessment = false, names = [] }: { assessment?:
   useEffect(() => { if (ready) localStorage.setItem("hb-floating", JSON.stringify(items)); }, [items, ready]);
   const front = (id: string) => setItems((all) => all.map((i) => (i.id === id ? { ...i, z: ++top.current } : i)));
   const add = (kind: Kind) => {
-    setItems((all) => [...all, { id: uid(), kind, x: Math.min(120 + all.length * 30, Math.max(8, window.innerWidth - 480)), y: 120 + all.length * 30, z: ++top.current }]);
+    setItems((all) => { const { x, y } = freeSpot(all, window.innerWidth, window.innerHeight); return [...all, { id: uid(), kind, x, y, z: ++top.current }]; });
     setMenu(false);
   };
   return (
     <div className="pointer-events-none fixed inset-0 z-[60]">
       {items.filter((it) => !assessment || !GAMES.includes(it.kind)).map((it) => (
-        <Floating key={it.id} item={it} onFront={() => front(it.id)}
+        <Floating key={it.id} item={it} large={large} onFront={() => front(it.id)}
           onMove={(x, y) => setItems((all) => all.map((i) => (i.id === it.id ? { ...i, x, y } : i)))}
           onClose={() => { localStorage.removeItem(`hb-floating-state:${it.id}`); setItems((all) => all.filter((i) => i.id !== it.id)); }}>
           {it.kind === "stagedBath" || it.kind === "stagedLunch" ? <div style={{ zoom: 0.5, width: "min(900px, calc((100vw - 56px) * 2))" }}><StagedWidget w={it.kind === "stagedBath" ? BATH : LUNCH} /></div> : it.kind === "rng" ? <RandomNumber /> : it.kind === "star" ? <MysteryStar names={names} /> : it.kind === "prize" ? <PrizeBoard /> : it.kind === "noise" ? <NoiseMeter /> : it.kind === "signals" ? <Signals /> : it.kind === "timer" ? <QuickTimer id={it.id} /> : <TwoPhase id={it.id} />}
         </Floating>
       ))}
       <div className="pointer-events-auto absolute bottom-4 right-4 flex flex-col items-end gap-2">
+        {menu && items.length > 0 && (
+          <button onClick={() => { items.forEach((i) => localStorage.removeItem(`hb-floating-state:${i.id}`)); setItems([]); setMenu(false); }} className="rounded-full border-2 border-destructive bg-card px-4 py-2 text-sm font-bold text-destructive shadow-lg hover:bg-destructive/10">
+            Close all tools
+          </button>
+        )}
         {menu && (Object.keys(LABELS) as Kind[]).filter((k) => !assessment || !GAMES.includes(k)).map((k) => (
           <button key={k} onClick={() => add(k)} className="rounded-full border-2 border-foreground bg-card px-4 py-2 text-sm font-bold shadow-lg hover:bg-accent">
             {LABELS[k]}
@@ -75,11 +80,22 @@ export function FloatingLayer({ assessment = false, names = [] }: { assessment?:
   );
 }
 
-function Floating({ item, onFront, onMove, onClose, children }: { item: Item; onFront: () => void; onMove: (x: number, y: number) => void; onClose: () => void; children: ReactNode }) {
+/** First grid spot (top-left first) not already taken by an open tool, so new tools don't stack. */
+export function freeSpot(items: { x: number; y: number }[], w: number, h: number) {
+  const stepX = 380, stepY = 300;
+  const cols = Math.max(1, Math.floor((w - 16) / stepX)), rows = Math.max(1, Math.floor((h - 100) / stepY));
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const x = 16 + c * stepX, y = 80 + r * stepY;
+    if (!items.some((i) => Math.abs(i.x - x) < 120 && Math.abs(i.y - y) < 120)) return { x, y };
+  }
+  const n = items.length; return { x: 16 + (n % 6) * 40, y: 80 + (n % 6) * 40 };
+}
+
+function Floating({ item, large, onFront, onMove, onClose, children }: { item: Item; large: boolean; onFront: () => void; onMove: (x: number, y: number) => void; onClose: () => void; children: ReactNode }) {
   const start = useRef<{ px: number; py: number; x: number; y: number } | null>(null);
   return (
     <div className="pointer-events-auto absolute w-max min-w-[min(340px,calc(100vw-16px))] max-w-[calc(100vw-16px)] rounded-3xl border-4 border-foreground bg-card shadow-2xl"
-      style={{ left: item.x, top: item.y, zIndex: item.z }} onPointerDown={onFront}>
+      style={{ left: item.x, top: item.y, zIndex: item.z, zoom: large ? 1.25 : undefined }} onPointerDown={onFront}>
       <div className="flex items-center rounded-t-[20px] bg-foreground text-background">
         <div className="flex-1 cursor-grab touch-none select-none py-1.5 text-center text-xs font-bold tracking-widest active:cursor-grabbing"
           onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); start.current = { px: e.clientX, py: e.clientY, x: item.x, y: item.y }; }}

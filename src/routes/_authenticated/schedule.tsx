@@ -254,11 +254,11 @@ function Schedule() {
                         ) : null}
                         <div className="space-y-1">
                           {c.slides.map((s) => (
-                            <button key={s.id} onClick={() => open(s)} className="block w-full max-w-48 rounded-lg p-1 text-left ring-1 ring-border hover:ring-primary">
-                              <ScaledSlide className="aspect-video w-full rounded"><SlideView data={s.data} names={[]} thumb /></ScaledSlide>
+                            <div role="button" tabIndex={0} key={s.id} onClick={() => open(s)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(s); } }} className="block w-full max-w-48 cursor-pointer rounded-lg p-1 text-left ring-1 ring-border hover:ring-primary">
+                              <div inert className="pointer-events-none"><ScaledSlide className="aspect-video w-full rounded"><SlideView data={s.data} names={[]} thumb /></ScaledSlide></div>
                               <div className="mt-1 truncate text-xs font-bold">{s.title}</div>
                               {s.data.staged && <StagedBadge />}
-                            </button>
+                            </div>
                           ))}
                           {!c.slides.length && (
                             <Button size="sm" variant="ghost" className="text-xs" onClick={() => create(b.folder as Folder, c.day, b.folder === "Specials" ? c.label : b.folder)}><Plus className="h-3 w-3" /> Create board</Button>

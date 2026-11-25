@@ -181,3 +181,12 @@ export function weekGrid(slides: Slide[], blocks: Block[] = activeBlocks()) {
     })),
   }));
 }
+
+/** Folder an unfiled board probably belongs to, from its title/heading ("Morning Message" -> Homeroom). */
+export function guessFolder(text: string): (typeof FOLDERS)[number] | null {
+  const t = text.toLowerCase();
+  if (/\bpack[ -]?up\b/.test(t)) return "Pack Up";
+  const hit = FOLDERS.find((f) => t.split(/[^a-z.]+/).includes(f.toLowerCase()));
+  if (hit) return hit;
+  return /\b(morning|welcome)\b/.test(t) ? "Homeroom" : null;
+}

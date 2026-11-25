@@ -54,13 +54,13 @@ export function LibraryList({ slides, currentId, names, onOpen, onCreateWeek }: 
             {isOpen && (
               <div className="space-y-2 p-2 pt-0">
                 {g.items.map((s) => (
-                  <button key={s.id} onClick={() => onOpen(s)} className={`block w-full rounded-lg p-1 text-left ${s.id === currentId ? "ring-4 ring-primary" : "ring-1 ring-border"}`}>
-                    <ScaledSlide className="aspect-video w-full rounded-md"><SlideView data={s.data} names={names} thumb /></ScaledSlide>
+                  <div role="button" tabIndex={0} key={s.id} onClick={() => onOpen(s)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(s); } }} className={`block w-full cursor-pointer rounded-lg p-1 text-left ${s.id === currentId ? "ring-4 ring-primary" : "ring-1 ring-border"}`}>
+                    <div inert className="pointer-events-none"><ScaledSlide className="aspect-video w-full rounded-md"><SlideView data={s.data} names={names} thumb /></ScaledSlide></div>
                     <div className="mt-1 flex items-center gap-1 px-1 text-xs font-bold">
                       <Art d={s.data} className="h-5 w-5" /><span className="truncate">{s.data.day ? `${s.data.day} · ` : ""}{s.title}</span>
                       {s.data.staged && <StagedBadge />}
                     </div>
-                  </button>
+                  </div>
                 ))}
                 {g.folder && g.items.length < 5 && (
                   <Button size="sm" variant="secondary" className="w-full" onClick={() => onCreateWeek(g.folder!)}>Create Mon–Fri boards</Button>

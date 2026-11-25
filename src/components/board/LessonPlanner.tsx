@@ -108,7 +108,7 @@ export function LessonPlanner({ dates, offDates, agendas, onUse, onCounters }: P
         <div className="grid grid-cols-5 gap-1 sm:gap-2">{DAYS.map((d, i) => {
           const dt = dates[i]; if (!dt) return null;
           const n = lessonOn(plan, dt, allOff);
-          return <Button key={d} variant={selected === d ? "default" : "outline"} className="h-auto min-h-16 flex-col gap-1 px-1 py-2" onClick={() => setSelected(d)} disabled={busy}><span>{d}</span><span className="text-xs">{n === null ? "No lesson" : `Lesson ${n}`}</span></Button>;
+          return <Button key={d} variant={selected === d ? "default" : "outline"} className="h-auto min-h-16 flex-col gap-1 px-1 py-2" onClick={() => setSelected(d)} disabled={busy}><span>{d}</span><span className="text-xs">{n === null ? (allOff.includes(dt) ? "Break" : "No lesson") : `Lesson ${n}`}</span></Button>;
         })}</div>
         <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
           <div className="flex items-start gap-3"><img src={artFor({ folder: subject as Folder }) ?? ""} alt={`${subject} schedule card`} className="h-16 w-16 rounded-md object-cover" /><div className="min-w-0">
