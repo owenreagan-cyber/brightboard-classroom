@@ -16,3 +16,5 @@
 - [x] Add Hero Agency reports with job history, check-ins, and points over past weeks; verify signed-in persistence
 - [x] Prepare true wallet-size Hero Agency PDF downloads with saved student names, print sheets, and visual verification.
 - [x] Replace Hero Agency rewards with 10/5 stamps and deliver verified lanyard and trading-card PDFs.
+- [x] Add phone Hero Agency widget with separately saved jobs; verify board synchronization.
+- [ ] Connect external Classroom Companion — blocked: its storage is unconfigured and this chat has read-only access to that project.

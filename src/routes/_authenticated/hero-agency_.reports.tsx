@@ -2,9 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, BarChart3, CheckCircle2, ClipboardList, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { usePersisted } from "@/components/board/games";
+import { useHeroAgency } from "@/lib/use-hero-agency";
 import { supabase } from "@/integrations/supabase/client";
-import { heroReports, newHeroJobs, normalizeHeroJobs, validHeroJobs, type HeroJobsState } from "@/lib/hero-jobs";
+import { heroReports, normalizeHeroJobs } from "@/lib/hero-jobs";
 import { displayNames } from "@/lib/rosters";
 
 export const Route = createFileRoute("/_authenticated/hero-agency_/reports")({
@@ -27,7 +27,7 @@ function weekLabel(key: string): string {
 
 function HeroAgencyReports() {
   const [names, setNames] = useState<string[]>([]);
-  const [stored] = usePersisted<HeroJobsState>("hb-hero-jobs", newHeroJobs, validHeroJobs, true);
+  const [stored] = useHeroAgency();
   const [weekCount, setWeekCount] = useState(8);
   const [pick, setPick] = useState("all");
   const s = normalizeHeroJobs(stored);

@@ -4,9 +4,9 @@ import { ArrowLeft, BarChart3, Download, Loader2, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { displayNames } from "@/lib/rosters";
-import { HERO_JOBS, newHeroJobs, normalizeHeroJobs, validHeroJobs, type HeroJobsState } from "@/lib/hero-jobs";
+import { HERO_JOBS, normalizeHeroJobs } from "@/lib/hero-jobs";
 import { HeroJobs, LicenseCard } from "@/components/board/HeroJobs";
-import { usePersisted } from "@/components/board/games";
+import { useHeroAgency } from "@/lib/use-hero-agency";
 import type { LicenseLayout, LicenseSize } from "@/lib/hero-license-pdf";
 
 type Tab = "jobs" | "licenses";
@@ -29,7 +29,7 @@ function HeroAgency() {
   const { tab = "jobs" } = Route.useSearch();
   const navigate = Route.useNavigate();
   const [names, setNames] = useState<string[]>([]);
-  const [stored] = usePersisted<HeroJobsState>("hb-hero-jobs", newHeroJobs, validHeroJobs, true);
+  const [stored] = useHeroAgency();
   const s = normalizeHeroJobs(stored);
   const [pick, setPick] = useState<string>("all");
   const [layout, setLayout] = useState<LicenseLayout>("letter");

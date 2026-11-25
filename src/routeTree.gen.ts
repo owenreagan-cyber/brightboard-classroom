@@ -19,6 +19,7 @@ import { Route as AuthenticatedMusicRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedRemoteRouteImport } from './routes/_authenticated/remote'
 import { Route as AuthenticatedScheduleRouteImport } from './routes/_authenticated/schedule'
 import { Route as AuthenticatedHeroAgencyReportsRouteImport } from './routes/_authenticated/hero-agency_.reports'
+import { Route as AuthenticatedHeroAgencyWidgetRouteImport } from './routes/_authenticated/hero-agency_.widget'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -70,6 +71,12 @@ const AuthenticatedHeroAgencyReportsRoute =
     path: '/hero-agency/reports',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedHeroAgencyWidgetRoute =
+  AuthenticatedHeroAgencyWidgetRouteImport.update({
+    id: '/hero-agency_/widget',
+    path: '/hero-agency/widget',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/remote': typeof AuthenticatedRemoteRoute
   '/schedule': typeof AuthenticatedScheduleRoute
   '/hero-agency/reports': typeof AuthenticatedHeroAgencyReportsRoute
+  '/hero-agency/widget': typeof AuthenticatedHeroAgencyWidgetRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -92,6 +100,7 @@ export interface FileRoutesByTo {
   '/remote': typeof AuthenticatedRemoteRoute
   '/schedule': typeof AuthenticatedScheduleRoute
   '/hero-agency/reports': typeof AuthenticatedHeroAgencyReportsRoute
+  '/hero-agency/widget': typeof AuthenticatedHeroAgencyWidgetRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -105,6 +114,7 @@ export interface FileRoutesById {
   '/_authenticated/remote': typeof AuthenticatedRemoteRoute
   '/_authenticated/schedule': typeof AuthenticatedScheduleRoute
   '/_authenticated/hero-agency_/reports': typeof AuthenticatedHeroAgencyReportsRoute
+  '/_authenticated/hero-agency_/widget': typeof AuthenticatedHeroAgencyWidgetRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/remote'
     | '/schedule'
     | '/hero-agency/reports'
+    | '/hero-agency/widget'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/remote'
     | '/schedule'
     | '/hero-agency/reports'
+    | '/hero-agency/widget'
   id:
     | '__root__'
     | '/'
@@ -141,6 +153,7 @@ export interface FileRouteTypes {
     | '/_authenticated/remote'
     | '/_authenticated/schedule'
     | '/_authenticated/hero-agency_/reports'
+    | '/_authenticated/hero-agency_/widget'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -221,6 +234,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHeroAgencyReportsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/hero-agency_/widget': {
+      id: '/_authenticated/hero-agency_/widget'
+      path: '/hero-agency/widget'
+      fullPath: '/hero-agency/widget'
+      preLoaderRoute: typeof AuthenticatedHeroAgencyWidgetRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -232,6 +252,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRemoteRoute: typeof AuthenticatedRemoteRoute
   AuthenticatedScheduleRoute: typeof AuthenticatedScheduleRoute
   AuthenticatedHeroAgencyReportsRoute: typeof AuthenticatedHeroAgencyReportsRoute
+  AuthenticatedHeroAgencyWidgetRoute: typeof AuthenticatedHeroAgencyWidgetRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -242,6 +263,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRemoteRoute: AuthenticatedRemoteRoute,
   AuthenticatedScheduleRoute: AuthenticatedScheduleRoute,
   AuthenticatedHeroAgencyReportsRoute: AuthenticatedHeroAgencyReportsRoute,
+  AuthenticatedHeroAgencyWidgetRoute: AuthenticatedHeroAgencyWidgetRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

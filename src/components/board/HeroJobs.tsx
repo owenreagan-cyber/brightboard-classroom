@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { usePersisted } from "./games";
-import { HERO_JOBS, JOB_PROTOCOLS, autoAssign, mentorFor, newHeroJobs, normalizeHeroJobs, pay, rotate, validHeroJobs, type HeroJob, type HeroJobsState } from "@/lib/hero-jobs";
+import { useHeroAgency } from "@/lib/use-hero-agency";
+import { Button } from "@/components/ui/button";
+import { HERO_JOBS, JOB_PROTOCOLS, autoAssign, mentorFor, normalizeHeroJobs, pay, rotate, type HeroJob } from "@/lib/hero-jobs";
 
 const IMGS = import.meta.glob("@/assets/heroes/*.webp", { eager: true, import: "default" }) as Record<string, string>;
 export const heroImg = (id: string) => Object.entries(IMGS).find(([k]) => k.endsWith(`/${id}.webp`))?.[1] ?? "";
@@ -20,7 +21,7 @@ function speak(text: string) {
 
 /** Hero Agency jobs: each job has a hero mentor, a read-aloud briefing, check-ins and weekly stamps. */
 export function HeroJobs({ names, wide = false }: { names: string[]; wide?: boolean }) {
-  const [stored, set] = usePersisted<HeroJobsState>("hb-hero-jobs", newHeroJobs, validHeroJobs, true);
+  const [stored, set, sync] = useHeroAgency();
   const s = normalizeHeroJobs(stored);
   const [open, setOpen] = useState<HeroJob | null>(null);
   const [tab, setTab] = useState<"jobs" | "pay">("jobs");
@@ -30,6 +31,9 @@ export function HeroJobs({ names, wide = false }: { names: string[]; wide?: bool
 
   return (
     <div className={`${wide ? "w-full" : "w-[min(640px,calc(100vw-48px))]"} space-y-2`}>
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground" aria-live="polite"><span>{sync.status === "loading" ? "Loading saved jobs…" : sync.status === "saving" ? "Saving…" : sync.status === "error" ? "Not saved" : "Saved to Hero Agency"}</span><Button asChild variant="ghost" size="sm"><Link to="/hero-agency/widget">Phone widget</Link></Button></div>
+      {sync.error && <p role="alert" className="text-sm text-destructive">{sync.error}</p>}
+      <fieldset disabled={sync.status === "loading" || sync.status === "saving" || sync.status === "error"} className="min-w-0 space-y-2 border-0 p-0">
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-display text-lg">⚡ Hero Agency jobs</span>
         <button onClick={() => setTab("jobs")} className={`${btn} ${tab === "jobs" ? "bg-foreground text-background" : "bg-muted"}`}>Jobs</button>
@@ -42,9 +46,9 @@ export function HeroJobs({ names, wide = false }: { names: string[]; wide?: bool
       </div>
 
       {open ? (
-        <div className="flex gap-3 rounded-2xl border-4 border-foreground p-3">
-          <img src={heroImg(mentorFor(open))} alt={HERO_NAMES[mentorFor(open)]} className="h-40 w-32 rounded-xl object-cover" />
-          <div className="flex-1 space-y-2">
+        <div className="flex flex-col gap-3 rounded-lg border-4 border-foreground p-3 sm:flex-row">
+          <img src={heroImg(mentorFor(open))} alt={HERO_NAMES[mentorFor(open)]} className="h-32 w-full rounded-lg object-cover sm:h-40 sm:w-32" />
+          <div className="min-w-0 flex-1 space-y-2">
             <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Agency briefing · mentor {HERO_NAMES[mentorFor(open)]}</div>
             <div className="font-display text-2xl">{open.title}</div>
             <p className="text-sm">{JOB_PROTOCOLS[open.title]}</p>
@@ -52,7 +56,7 @@ export function HeroJobs({ names, wide = false }: { names: string[]; wide?: bool
               onChange={(e) => { const assign = Object.fromEntries(Object.entries(s.assign).filter(([id, n]) => id !== open.id && n !== e.target.value)); if (e.target.value) assign[open.id] = e.target.value; set({ ...s, assign }); }}>
               <option value="">— Empty —</option>{names.map((n) => <option key={n}>{n}</option>)}
             </select>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button onClick={() => speak(`${who ? who + ", " : ""}you are our ${open.title}! ${JOB_PROTOCOLS[open.title]} Plus Ultra!`)} className={`${btn} bg-primary text-primary-foreground`}>🔊 Read briefing</button>
               <button onClick={() => setOpen(null)} className={`${btn} bg-muted`}>Back</button>
             </div>
@@ -71,16 +75,17 @@ export function HeroJobs({ names, wide = false }: { names: string[]; wide?: bool
         <div className="max-h-80 space-y-1 overflow-y-auto">
           <p className="text-xs text-muted-foreground">3 check-ins this week earn the job's stamps.</p>
           {names.filter((n) => Object.values(s.assign).includes(n)).map((n) => (
-            <div key={n} className="flex items-center gap-2 rounded-lg bg-muted px-3 py-1">
-              <span className="flex-1 font-bold">{n}</span>
+            <div key={n} className="flex flex-wrap items-center gap-2 rounded-lg bg-muted px-3 py-1">
+              <span className="min-w-16 flex-1 font-bold">{n}</span>
               <button aria-label={`${n} remove check-in`} onClick={() => checkIn(n, -1)} className={`${btn} bg-card`}>−</button>
               <span className="w-16 text-center text-sm">{"✅".repeat(Math.min(3, s.checkIns[n] ?? 0)) || "0"}</span>
               <button aria-label={`${n} check in`} onClick={() => checkIn(n, 1)} className={`${btn} bg-primary text-primary-foreground`}>+</button>
-              <span className="w-14 text-right font-display">{pay(s, n)} stamps</span>
+              <span className="w-20 shrink-0 text-right font-display text-sm">{pay(s, n)} stamps</span>
             </div>
           ))}
         </div>
       )}
+      </fieldset>
     </div>
   );
 }
