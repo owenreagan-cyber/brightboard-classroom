@@ -10,3 +10,4 @@
 - Staged group timers (bathroom/locker 9:00, lunch 12:20) with daily shuffled group order — done
 - [x] Widget pack: attendance, team points, groups, jobs, today's plan, brain break, help line, word of the day, phone remote, picker memory
 - [ ] One shared look for all timers (deferred)
+- [x] Hero Agency jobs tool (rebuilt from Classroom Companion)

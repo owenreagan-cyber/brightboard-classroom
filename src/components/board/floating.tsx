@@ -3,6 +3,7 @@ import { Plus, X } from "lucide-react";
 import { MysteryStar, PrizeBoard, RandomNumber } from "./games";
 import { catchUpTimer, formatSec, getTwoPhaseState, uid, newWidget, type Widget } from "@/lib/board";
 import { StagedWidget } from "./widgets";
+import { HeroJobs } from "./HeroJobs";
 import { AttendanceTool, BrainBreak, DailyAgenda, GroupsMaker, HelpQueue, JobsChart, TeamPoints, WordOfDay } from "./classroom";
 import { STAGED_PRESETS } from "@/lib/staged";
 
@@ -13,11 +14,11 @@ function presetWidget(k: "bathroom" | "lunch") {
 const BATH = presetWidget("bathroom");
 const LUNCH = presetWidget("lunch");
 
-type Kind = "signals" | "timer" | "phases" | "noise" | "rng" | "star" | "prize" | "stagedBath" | "stagedLunch" | "attend" | "teams" | "groups" | "jobs" | "agenda" | "brain" | "help" | "word";
+type Kind = "signals" | "timer" | "phases" | "noise" | "rng" | "star" | "prize" | "stagedBath" | "stagedLunch" | "attend" | "teams" | "groups" | "jobs" | "agenda" | "brain" | "help" | "word" | "heroJobs";
 const GAMES: Kind[] = ["noise", "star", "prize", "teams", "brain"];
 type Item = { id: string; kind: Kind; x: number; y: number; z: number };
 
-const LABELS: Record<Kind, string> = { signals: "Voice signals", timer: "Timer", phases: "Two-phase timer", noise: "Noise meter", rng: "Random number", star: "Mystery star", prize: "100 Prize board", stagedBath: "Bathroom / locker groups", stagedLunch: "Lunch groups", attend: "Attendance", teams: "Team points", groups: "Random groups", jobs: "Jobs chart", agenda: "Today's plan", brain: "Brain break", help: "Help line", word: "Word of the day" };
+const LABELS: Record<Kind, string> = { signals: "Voice signals", timer: "Timer", phases: "Two-phase timer", noise: "Noise meter", rng: "Random number", star: "Mystery star", prize: "100 Prize board", stagedBath: "Bathroom / locker groups", stagedLunch: "Lunch groups", attend: "Attendance", teams: "Team points", groups: "Random groups", jobs: "Jobs chart", agenda: "Today's plan", brain: "Brain break", help: "Help line", word: "Word of the day", heroJobs: "Hero Agency jobs" };
 
 function beep() {
   try {
@@ -58,7 +59,7 @@ export function FloatingLayer({ assessment = false, names = [], allNames = names
         <Floating key={it.id} item={it} large={large} onFront={() => front(it.id)}
           onMove={(x, y) => setItems((all) => all.map((i) => (i.id === it.id ? { ...i, x, y } : i)))}
           onClose={() => { localStorage.removeItem(`hb-floating-state:${it.id}`); setItems((all) => all.filter((i) => i.id !== it.id)); }}>
-          {it.kind === "stagedBath" || it.kind === "stagedLunch" ? <div style={{ zoom: 0.5, width: "min(900px, calc((100vw - 56px) * 2))" }}><StagedWidget w={it.kind === "stagedBath" ? BATH : LUNCH} /></div> : it.kind === "attend" ? <AttendanceTool names={allNames} /> : it.kind === "teams" ? <TeamPoints /> : it.kind === "groups" ? <GroupsMaker names={names} /> : it.kind === "jobs" ? <JobsChart names={names} /> : it.kind === "agenda" ? <DailyAgenda /> : it.kind === "brain" ? <BrainBreak /> : it.kind === "help" ? <HelpQueue names={names} /> : it.kind === "word" ? <WordOfDay /> : it.kind === "rng" ? <RandomNumber /> : it.kind === "star" ? <MysteryStar names={names} /> : it.kind === "prize" ? <PrizeBoard /> : it.kind === "noise" ? <NoiseMeter /> : it.kind === "signals" ? <Signals /> : it.kind === "timer" ? <QuickTimer id={it.id} /> : <TwoPhase id={it.id} />}
+          {it.kind === "stagedBath" || it.kind === "stagedLunch" ? <div style={{ zoom: 0.5, width: "min(900px, calc((100vw - 56px) * 2))" }}><StagedWidget w={it.kind === "stagedBath" ? BATH : LUNCH} /></div> : it.kind === "attend" ? <AttendanceTool names={allNames} /> : it.kind === "teams" ? <TeamPoints /> : it.kind === "groups" ? <GroupsMaker names={names} /> : it.kind === "heroJobs" ? <HeroJobs names={allNames} /> : it.kind === "jobs" ? <JobsChart names={names} /> : it.kind === "agenda" ? <DailyAgenda /> : it.kind === "brain" ? <BrainBreak /> : it.kind === "help" ? <HelpQueue names={names} /> : it.kind === "word" ? <WordOfDay /> : it.kind === "rng" ? <RandomNumber /> : it.kind === "star" ? <MysteryStar names={names} /> : it.kind === "prize" ? <PrizeBoard /> : it.kind === "noise" ? <NoiseMeter /> : it.kind === "signals" ? <Signals /> : it.kind === "timer" ? <QuickTimer id={it.id} /> : <TwoPhase id={it.id} />}
         </Floating>
       ))}
       <div className="pointer-events-auto absolute bottom-4 right-4 flex flex-col items-end gap-2">
