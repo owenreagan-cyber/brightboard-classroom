@@ -168,12 +168,14 @@ export function SymbolsWidget({ w }: { w: Extract<Widget, { type: "symbols" }> }
 export function PickerWidget({ names }: { names: string[] }) {
   const [shown, setShown] = useState<string | null>(null);
   const [spinning, setSpinning] = useState(false);
-  const [used, setUsed] = useState<string[]>([]);
+  const [mem, setMem] = usePersisted<{ date: string; used: string[] }>("hb-picker-used", () => ({ date: "", used: [] }), (v) => !!v && typeof v === "object" && Array.isArray((v as { used?: unknown }).used));
+  const todayKey = new Date().toDateString();
+  const used = mem.date === todayKey ? mem.used.filter((n) => names.includes(n)) : [];
+  const setUsed = (f: string[] | ((u: string[]) => string[])) => setMem({ date: todayKey, used: typeof f === "function" ? f(used) : f });
   const pick = () => {
     const pool = names.filter((n) => !used.includes(n));
     const from = pool.length ? pool : names;
     if (!from.length) return;
-    if (!pool.length) setUsed([]);
     setSpinning(true);
     let n = 0;
     const t = setInterval(() => {
@@ -182,7 +184,7 @@ export function PickerWidget({ names }: { names: string[] }) {
         clearInterval(t);
         const final = from[Math.floor(Math.random() * from.length)]!;
         setShown(final);
-        setUsed((u) => [...u, final]);
+        setUsed([...(pool.length ? used : []), final]);
         setSpinning(false);
         chime();
       }
@@ -195,6 +197,7 @@ export function PickerWidget({ names }: { names: string[] }) {
         {names.length ? shown ?? "❓" : "Add your class list"}
       </div>
       <button className="kid-btn" onClick={pick} disabled={spinning || !names.length}>Pick a friend!</button>
+      {names.length > 0 && <div className="mt-4 text-2xl text-muted-foreground">{used.length} of {names.length} picked today {used.length > 0 && <button className="underline" onClick={() => setUsed([])}>Start over</button>}</div>}
     </div>
   );
 }

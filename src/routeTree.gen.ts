@@ -15,6 +15,7 @@ import { Route as SpotifyCallbackRouteImport } from './routes/spotify-callback'
 import { Route as AuthenticatedBoardRouteImport } from './routes/_authenticated/board'
 import { Route as AuthenticatedCharactersRouteImport } from './routes/_authenticated/characters'
 import { Route as AuthenticatedMusicRouteImport } from './routes/_authenticated/music'
+import { Route as AuthenticatedRemoteRouteImport } from './routes/_authenticated/remote'
 import { Route as AuthenticatedScheduleRouteImport } from './routes/_authenticated/schedule'
 
 const IndexRoute = IndexRouteImport.update({
@@ -46,6 +47,11 @@ const AuthenticatedMusicRoute = AuthenticatedMusicRouteImport.update({
   path: '/music',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRemoteRoute = AuthenticatedRemoteRouteImport.update({
+  id: '/remote',
+  path: '/remote',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedScheduleRoute = AuthenticatedScheduleRouteImport.update({
   id: '/schedule',
   path: '/schedule',
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/board': typeof AuthenticatedBoardRoute
   '/characters': typeof AuthenticatedCharactersRoute
   '/music': typeof AuthenticatedMusicRoute
+  '/remote': typeof AuthenticatedRemoteRoute
   '/schedule': typeof AuthenticatedScheduleRoute
 }
 export interface FileRoutesByTo {
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/board': typeof AuthenticatedBoardRoute
   '/characters': typeof AuthenticatedCharactersRoute
   '/music': typeof AuthenticatedMusicRoute
+  '/remote': typeof AuthenticatedRemoteRoute
   '/schedule': typeof AuthenticatedScheduleRoute
 }
 export interface FileRoutesById {
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/_authenticated/board': typeof AuthenticatedBoardRoute
   '/_authenticated/characters': typeof AuthenticatedCharactersRoute
   '/_authenticated/music': typeof AuthenticatedMusicRoute
+  '/_authenticated/remote': typeof AuthenticatedRemoteRoute
   '/_authenticated/schedule': typeof AuthenticatedScheduleRoute
 }
 export interface FileRouteTypes {
@@ -86,6 +95,7 @@ export interface FileRouteTypes {
     | '/board'
     | '/characters'
     | '/music'
+    | '/remote'
     | '/schedule'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -94,6 +104,7 @@ export interface FileRouteTypes {
     | '/board'
     | '/characters'
     | '/music'
+    | '/remote'
     | '/schedule'
   id:
     | '__root__'
@@ -103,6 +114,7 @@ export interface FileRouteTypes {
     | '/_authenticated/board'
     | '/_authenticated/characters'
     | '/_authenticated/music'
+    | '/_authenticated/remote'
     | '/_authenticated/schedule'
   fileRoutesById: FileRoutesById
 }
@@ -156,6 +168,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMusicRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/remote': {
+      id: '/_authenticated/remote'
+      path: '/remote'
+      fullPath: '/remote'
+      preLoaderRoute: typeof AuthenticatedRemoteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/schedule': {
       id: '/_authenticated/schedule'
       path: '/schedule'
@@ -170,6 +189,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBoardRoute: typeof AuthenticatedBoardRoute
   AuthenticatedCharactersRoute: typeof AuthenticatedCharactersRoute
   AuthenticatedMusicRoute: typeof AuthenticatedMusicRoute
+  AuthenticatedRemoteRoute: typeof AuthenticatedRemoteRoute
   AuthenticatedScheduleRoute: typeof AuthenticatedScheduleRoute
 }
 
@@ -177,6 +197,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBoardRoute: AuthenticatedBoardRoute,
   AuthenticatedCharactersRoute: AuthenticatedCharactersRoute,
   AuthenticatedMusicRoute: AuthenticatedMusicRoute,
+  AuthenticatedRemoteRoute: AuthenticatedRemoteRoute,
   AuthenticatedScheduleRoute: AuthenticatedScheduleRoute,
 }
 

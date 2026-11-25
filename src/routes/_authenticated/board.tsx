@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScaledSlide, SlideView } from "@/components/board/SlideView";
 import { FloatingLayer } from "@/components/board/floating";
+import { useAbsent } from "@/components/board/classroom";
+import { present as presentNames } from "@/lib/classroom";
 import { SlideEditor } from "@/components/board/SlideEditor";
 import { formatSec, templateSlides, type Slide, type SlideData } from "@/lib/board";
 import { DAYS, FOLDERS, applyToAllDays, guessFolder, blockCountdown, suggest, exportLibrary, isAssessment, toBoardJson, type Folder } from "@/lib/library";
@@ -18,6 +20,7 @@ import mascot from "@/assets/mascot-hero.png";
 import { cleanTheme, setSubjectThemes } from "@/lib/subject-theme";
 import { applyOffDays, loadSettings, loadWeekEvents } from "@/lib/school-sync";
 import { weekStart } from "@/lib/calendar";
+import { listenRemote } from "@/lib/remote";
 
 type Search = { slide?: number | undefined };
 
@@ -49,6 +52,7 @@ function Board() {
   useEffect(() => setSpotifyPresenting(presenting), [presenting]);
   const [importOpen, setImportOpen] = useState(false);
   const idx = Math.min(Math.max(0, (slideParam ?? 1) - 1), Math.max(0, (slides?.length ?? 1) - 1));
+  const absent = useAbsent();
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const go = useCallback((i: number) => navigate({ search: { slide: i + 1 }, replace: true }), [navigate]);
@@ -85,6 +89,23 @@ function Board() {
       setRosters(map);
     })();
   }, []);
+
+  // Phone remote: next / previous slide and Mystery Star reveal.
+  const remoteRef = useRef({ idx, count: 0 });
+  remoteRef.current = { idx, count: slides?.length ?? 0 };
+  useEffect(() => {
+    let off = () => {};
+    void supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) return;
+      off = listenRemote(data.user.id, (a) => {
+        const { idx: i, count } = remoteRef.current;
+        if (a === "next") go(Math.min(count - 1, i + 1));
+        if (a === "prev") go(Math.max(0, i - 1));
+        if (a === "star" || a === "refresh") window.dispatchEvent(new Event("focus"));
+      });
+    });
+    return () => off();
+  }, [go]);
 
   useEffect(() => {
     if (slides?.[idx]) document.title = `${idx + 1}/${slides.length} — ${slides[idx]!.title}`;
@@ -182,7 +203,8 @@ function Board() {
 
   if (!slides) return <div className="flex min-h-screen items-center justify-center font-display text-2xl text-primary">Loading your board…</div>;
   const current = slides[idx]!;
-  const names = displayNames(rosters[classFor(current.data.folder)]?.students ?? []);
+  const allNames = displayNames(rosters[classFor(current.data.folder)]?.students ?? []);
+  const names = presentNames(allNames, absent);
   const openRoster = (c: ClassName) => { setRosterClass(c); setRosterText((rosters[c]?.students ?? []).join("\n")); };
 
   return (
@@ -194,6 +216,7 @@ function Board() {
           <Button asChild variant="outline"><Link to="/schedule"><CalendarDays className="h-4 w-4" /> Schedule</Link></Button>
           <Button asChild variant="outline"><Link to="/music">🎵 Music</Link></Button>
           <Button asChild variant="outline"><Link to="/characters" search={{ slide: undefined }}>🥷 Characters</Link></Button>
+          <Button asChild variant="outline"><Link to="/remote">📱 Remote</Link></Button>
           <Button variant="outline" onClick={() => setImportOpen(true)}><Upload className="h-4 w-4" /> Import JSON</Button>
           <Button variant="outline" onClick={() => download(`${current.title}.json`, JSON.stringify({ version: 1, boards: [toBoardJson(current)] }, null, 2))}><Download className="h-4 w-4" /> Export board</Button>
           <Button variant="outline" onClick={() => download("hero-board-library.json", exportLibrary(slides))}><Download className="h-4 w-4" /> Export library</Button>
@@ -247,7 +270,7 @@ function Board() {
 
       {presenting && <Presenter slides={slides} idx={idx} names={names} go={go} onExit={() => { setPresenting(false); if (document.fullscreenElement) document.exitFullscreen(); }} />}
 
-      <FloatingLayer assessment={isAssessment(current.data)} names={names} large={presenting} />
+      <FloatingLayer assessment={isAssessment(current.data)} names={names} allNames={allNames} large={presenting} />
       <ImportDialog open={importOpen} onOpenChange={setImportOpen} onImport={importBoards} />
 
       <Dialog open={rosterOpen} onOpenChange={setRosterOpen}>

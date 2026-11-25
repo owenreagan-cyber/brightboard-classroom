@@ -22,3 +22,5 @@
 - School-day labels use the connected Google staff calendar plus personal events, paginated across a July–June year; never treat national observances as school closures or invent break dates.
 - Continuing lesson plans and dated welcome messages live in user metadata; pure teaching-day progression is independent of Canvas so agenda refreshes cannot reset a counter.
 - Lesson welcome generation uses authenticated server functions and request-scoped Responses helpers; numbers and materials are assembled deterministically so AI cannot alter homework references.
+- Classroom tools (attendance, team points, jobs, help line, word) are floating tools in src/components/board/classroom.tsx with pure logic in src/lib/classroom.ts, synced via usePersisted cloud metadata — no database change.
+- Phone remote uses a per-teacher realtime broadcast channel (src/lib/remote.ts) — no table needed for transient commands.
