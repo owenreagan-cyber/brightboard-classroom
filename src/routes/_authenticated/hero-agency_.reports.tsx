@@ -11,9 +11,9 @@ export const Route = createFileRoute("/_authenticated/hero-agency_/reports")({
   head: () => ({
     meta: [
       { title: "Hero Agency Reports — Hero Board" },
-      { name: "description", content: "Review each student's weekly Hero Agency jobs, check-ins and hero points." },
+      { name: "description", content: "Review each student's weekly Hero Agency jobs, check-ins and stamps." },
       { property: "og:title", content: "Hero Agency Reports — Hero Board" },
-      { property: "og:description", content: "Review each student's weekly Hero Agency jobs, check-ins and hero points." },
+      { property: "og:description", content: "Review each student's weekly Hero Agency jobs, check-ins and stamps." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -50,7 +50,7 @@ function HeroAgencyReports() {
 
       <section className="rounded-3xl border-4 border-foreground bg-accent/35 p-4 shadow-pop">
         <h2 className="font-display text-xl">Weekly hero records</h2>
-        <p className="mt-1 text-sm">The current week updates live. Tapping <strong>New week</strong> saves the old week's jobs, check-ins and points before rotating.</p>
+        <p className="mt-1 text-sm">The current week updates live. Tapping <strong>New week</strong> saves the old week's jobs, check-ins and stamps before rotating.</p>
         {!s.history.length && <p className="mt-2 text-sm font-bold">No earlier weeks are saved yet. Weeks from before this feature was added can't be reconstructed.</p>}
       </section>
 
@@ -74,7 +74,7 @@ function HeroAgencyReports() {
         <div className="ml-auto flex gap-5 rounded-xl bg-muted px-4 py-2 text-sm">
           <span className="flex items-center gap-1.5 font-bold"><ClipboardList className="h-4 w-4" /> {s.history.length} archived week{s.history.length === 1 ? "" : "s"}</span>
           <span className="flex items-center gap-1.5 font-bold"><CheckCircle2 className="h-4 w-4" /> {totalCheckIns} check-ins</span>
-          <span className="flex items-center gap-1.5 font-bold"><Star className="h-4 w-4" /> {totalPoints} points</span>
+          <span className="flex items-center gap-1.5 font-bold"><Star className="h-4 w-4" /> {totalPoints} stamps</span>
         </div>
       </div>
 
@@ -88,7 +88,7 @@ function HeroAgencyReports() {
                 <h2 className="font-display text-2xl">{student.name}</h2>
                 <div className="ml-auto flex gap-4 text-sm font-bold">
                   <span>{student.totalCheckIns} check-ins</span>
-                  <span className="text-accent">{student.totalPoints} hero points</span>
+                  <span className="text-accent">{student.totalPoints} stamps</span>
                 </div>
               </header>
               <div className="divide-y divide-border">
@@ -100,7 +100,7 @@ function HeroAgencyReports() {
                     </div>
                     <div className="min-w-36 flex-1 font-display text-lg">{week.job?.title ?? "No job"}</div>
                     <div className="w-24 text-sm font-bold">✅ {week.checkIns} check-in{week.checkIns === 1 ? "" : "s"}</div>
-                    <div className="ml-auto w-24 text-right font-display text-lg text-primary">{week.points} pts</div>
+                    <div className="ml-auto w-24 text-right font-display text-lg text-primary">{week.points} stamps</div>
                   </div>
                 ))}
               </div>

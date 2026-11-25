@@ -2,28 +2,40 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { HERO_JOBS, type HeroJob } from "./hero-jobs";
 
 export const WALLET_CARD = { width: 153, height: 243 };
+export const LICENSE_SIZES = {
+  trading: { width: 180, height: 252, top: 0, columns: 3, rows: 2, label: "Trading card · 2.5 × 3.5 in" },
+  lanyard: { width: 216, height: 288, top: 18, columns: 2, rows: 2, label: "Lanyard · 3 × 4 in" },
+};
+export type LicenseSize = keyof typeof LICENSE_SIZES;
 export type LicenseLayout = "letter" | "cards";
 export type StudentLicense = { job: HeroJob; name: string };
 
 /** Dimensions are PDF points (72 per inch); never scale the wallet artwork. */
-export function licensePosition(index: number) {
-  return { x: 70.5 + (index % 3) * 159, y: 25.5 + (2 - Math.floor((index % 9) / 3)) * 249 };
+export function licensePosition(index: number, size: LicenseSize = "trading") {
+  const { width, height, columns, rows } = LICENSE_SIZES[size];
+  const gap = 9;
+  const left = (612 - columns * width - (columns-1)*gap)/2;
+  const bottom = (792 - rows * height - (rows-1)*gap)/2;
+  return { x: left + (index % columns)*(width+gap), y: bottom + (rows-1-Math.floor((index % (rows*columns))/columns))*(height+gap) };
 }
 
-export async function buildLicensePdf(cards: StudentLicense[], templateBytes: ArrayBuffer | Uint8Array, layout: LicenseLayout) {
+export async function buildLicensePdf(cards: StudentLicense[], templateBytes: ArrayBuffer | Uint8Array, layout: LicenseLayout, size: LicenseSize = "trading") {
   if (!cards.length) throw new Error("No licenses selected.");
+  const dimensions = LICENSE_SIZES[size];
+  const perPage = dimensions.columns * dimensions.rows;
   const source = await PDFDocument.load(templateBytes);
   const nameFont = await source.embedFont(StandardFonts.HelveticaBold);
   for (const { job, name } of cards) {
     const index = HERO_JOBS.findIndex(j => j.id === job.id);
     const page = source.getPages()[index];
     if (!page) throw new Error("This job's license artwork is missing.");
-    const size = Math.min(15, 133 / Math.max(1, nameFont.widthOfTextAtSize(name, 1)));
-    page.drawText(name, { x: 10, y: 87, size, font: nameFont, color: rgb(0.125, 0.141, 0.235) });
+    const sx = dimensions.width/153, sy = (dimensions.height-dimensions.top)/243;
+    const fontSize = Math.min(15*sx, 133*sx / Math.max(1, nameFont.widthOfTextAtSize(name, 1)));
+    page.drawText(name, { x: 10*sx, y: 87*sy, size: fontSize, font: nameFont, color: rgb(0.125, 0.141, 0.235) });
   }
   const output = await PDFDocument.create();
-  output.setTitle("Hero Agency — Student Wallet Licenses");
-  output.setSubject("Wallet cards: 2.125 × 3.375 inches. Print at Actual size / 100%.");
+  output.setTitle(`Hero Agency — ${size} Student Licenses`);
+  output.setSubject(`${dimensions.label}. Print at Actual size / 100%.`);
   output.setCreator("Hero Board");
   // Flush newly added name-font resources before embedding into another document.
   const finalized = await PDFDocument.load(await source.save());
@@ -38,13 +50,13 @@ export async function buildLicensePdf(cards: StudentLicense[], templateBytes: Ar
     const artwork = pages[i];
     if (!artwork) continue;
     const page = layout === "cards"
-      ? output.addPage([WALLET_CARD.width, WALLET_CARD.height])
-      : i % 9 === 0 ? output.addPage([612, 792]) : output.getPages().at(-1);
+      ? output.addPage([dimensions.width, dimensions.height])
+      : i % perPage === 0 ? output.addPage([612, 792]) : output.getPages().at(-1);
     if (!page) continue;
-    const position = layout === "cards" ? { x: 0, y: 0 } : licensePosition(i);
-    page.drawPage(artwork, { ...position, width: WALLET_CARD.width, height: WALLET_CARD.height });
-    if (layout === "letter" && i % 9 === 0) {
-      page.drawText('Hero Board | Wallet licenses 2.125 x 3.375 in | Print Actual size / 100% | Cut along borders', {
+    const position = layout === "cards" ? { x: 0, y: 0 } : licensePosition(i, size);
+    page.drawPage(artwork, { ...position, width: dimensions.width, height: dimensions.height });
+    if (layout === "letter" && i % perPage === 0) {
+      page.drawText(`Hero Board | ${size} licenses ${dimensions.width/72} x ${dimensions.height/72} in | Print Actual size / 100% | Cut along borders`, {
         x: 70.5, y: 12, size: 6, font: footerFont, color: rgb(0.125, 0.141, 0.235),
       });
     }

@@ -18,7 +18,7 @@ function speak(text: string) {
   window.speechSynthesis.speak(u);
 }
 
-/** Hero Agency jobs: each job has a hero mentor, a read-aloud briefing, check-ins and weekly hero points. */
+/** Hero Agency jobs: each job has a hero mentor, a read-aloud briefing, check-ins and weekly stamps. */
 export function HeroJobs({ names, wide = false }: { names: string[]; wide?: boolean }) {
   const [stored, set] = usePersisted<HeroJobsState>("hb-hero-jobs", newHeroJobs, validHeroJobs, true);
   const s = normalizeHeroJobs(stored);
@@ -33,7 +33,7 @@ export function HeroJobs({ names, wide = false }: { names: string[]; wide?: bool
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-display text-lg">⚡ Hero Agency jobs</span>
         <button onClick={() => setTab("jobs")} className={`${btn} ${tab === "jobs" ? "bg-foreground text-background" : "bg-muted"}`}>Jobs</button>
-        <button onClick={() => setTab("pay")} className={`${btn} ${tab === "pay" ? "bg-foreground text-background" : "bg-muted"}`}>Hero points</button>
+        <button onClick={() => setTab("pay")} className={`${btn} ${tab === "pay" ? "bg-foreground text-background" : "bg-muted"}`}>Stamps</button>
         <Link to="/hero-agency" search={{ tab: "licenses" }} className={`${btn} bg-muted`}>🪪 Licenses</Link>
         <button disabled={!names.length} onClick={() => set(autoAssign(s, names))} className={`${btn} ml-auto bg-primary text-primary-foreground`}>Fill empty jobs</button>
         {confirm
@@ -69,14 +69,14 @@ export function HeroJobs({ names, wide = false }: { names: string[]; wide?: bool
         </div>
       ) : (
         <div className="max-h-80 space-y-1 overflow-y-auto">
-          <p className="text-xs text-muted-foreground">3 check-ins this week earn the job's hero points.</p>
+          <p className="text-xs text-muted-foreground">3 check-ins this week earn the job's stamps.</p>
           {names.filter((n) => Object.values(s.assign).includes(n)).map((n) => (
             <div key={n} className="flex items-center gap-2 rounded-lg bg-muted px-3 py-1">
               <span className="flex-1 font-bold">{n}</span>
               <button aria-label={`${n} remove check-in`} onClick={() => checkIn(n, -1)} className={`${btn} bg-card`}>−</button>
               <span className="w-16 text-center text-sm">{"✅".repeat(Math.min(3, s.checkIns[n] ?? 0)) || "0"}</span>
               <button aria-label={`${n} check in`} onClick={() => checkIn(n, 1)} className={`${btn} bg-primary text-primary-foreground`}>+</button>
-              <span className="w-14 text-right font-display">{pay(s, n)} pts</span>
+              <span className="w-14 text-right font-display">{pay(s, n)} stamps</span>
             </div>
           ))}
         </div>
@@ -85,18 +85,19 @@ export function HeroJobs({ names, wide = false }: { names: string[]; wide?: bool
   );
 }
 
-/** Standard wallet-size hero license (2.125 × 3.375 inches). */
-export function LicenseCard({ job, name }: { job: HeroJob; name: string }) {
+/** Standard lanyard and trading-card hero license (2.125 × 3.375 inches). */
+export function LicenseCard({ job, name, size = "trading" }: { job: HeroJob; name: string; size?: "trading" | "lanyard" }) {
   const hero = mentorFor(job);
   return (
-    <div className="license-card flex flex-col overflow-hidden rounded-xl border-4 border-foreground bg-card text-card-foreground">
+    <div className={`license-card license-${size} flex flex-col overflow-hidden rounded-xl border-4 border-foreground bg-card text-card-foreground`}>
+      {size === "lanyard" && <div className="h-6 shrink-0 text-center text-xs text-muted-foreground">◯</div>}
       <div className="bg-foreground px-2 py-1 text-center font-display text-[9px] text-background">HERO AGENCY LICENSE</div>
       <img src={heroImg(hero)} alt={HERO_NAMES[hero]} className="h-[1.15in] w-full object-cover object-top" />
       <div className="flex flex-1 flex-col gap-0.5 p-2">
         <div className="font-display text-base leading-tight text-primary">{name}</div>
         <div className="font-display text-xs leading-tight">{job.title}</div>
         <div className="text-[9px] leading-snug">{JOB_PROTOCOLS[job.title]}</div>
-        <div className="mt-auto flex justify-between text-[9px] font-bold"><span>Mentor: {HERO_NAMES[hero]}</span><span>{job.gp} pts/week</span></div>
+        <div className="mt-auto flex justify-between text-[9px] font-bold"><span>Mentor: {HERO_NAMES[hero]}</span><span>{job.gp} stamps</span></div>
       </div>
     </div>
   );

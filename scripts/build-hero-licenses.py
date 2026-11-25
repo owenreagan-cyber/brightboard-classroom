@@ -19,13 +19,17 @@ for name, filename in [('Display', 'DelaGothicOne.ttf'), ('Body', 'ZenKakuGothic
 
 # Print equivalents of Hero Board's foreground, primary, accent and card tokens.
 INK, PRIMARY, ACCENT, PAPER = map(HexColor, ['#20243C', '#ED592E', '#F5DC59', '#FFFFFF'])
-W, H = 153, 243  # 2.125 x 3.375 inches, standard wallet size
-target = ROOT / 'public/downloads/hero-agency-wallet-templates.pdf'
+kind = sys.argv[3] if len(sys.argv) > 3 else 'trading'
+PW, PH, TOP = (216, 288, 18) if kind == 'lanyard' else (180, 252, 0)
+W, H = 153, 243  # shared artwork coordinate system
+target = ROOT / f'public/downloads/hero-agency-{kind}-templates.pdf'
 target.parent.mkdir(parents=True, exist_ok=True)
-c = canvas.Canvas(str(target), pagesize=(W, H))
+c = canvas.Canvas(str(target), pagesize=(PW, PH))
 c.setTitle('Hero Agency — Wallet License Templates')
 style = ParagraphStyle('Protocol', fontName='Body', fontSize=8, leading=10, textColor=INK)
 for j in jobs:
+    c.saveState()
+    c.scale(PW/W, (PH-TOP)/H)
     c.setFillColor(PAPER); c.rect(0, 0, W, H, fill=1, stroke=0)
     c.setFillColor(INK); c.rect(0, H-22, W, 22, fill=1, stroke=0)
     c.setFillColor(PAPER); c.setFont('Display', 7.3)
@@ -43,8 +47,13 @@ for j in jobs:
     p.drawOn(c, 10, 67-height)
     mentor = {'nighteye': 'Sir Nighteye', 'eraserhead': 'Eraser Head', 'mtlady': 'Mt. Lady'}.get(j['mentor'], j['mentor'].capitalize())
     c.setFillColor(INK); c.setFont('Bold', 6.8); c.drawString(10, 15, f'Mentor: {mentor}')
-    c.setFont('Body', 6.8); c.drawRightString(W-10, 15, f'{j["gp"]} pts/week')
+    c.setFont('Body', 6.8); c.drawRightString(W-10, 15, f'{j["gp"]} stamps')
     c.setStrokeColor(INK); c.setLineWidth(1); c.rect(.5, .5, W-1, H-1, fill=0, stroke=1)
+    c.restoreState()
+    if TOP:
+        c.setFillColor(PAPER); c.rect(0, PH-TOP, PW, TOP, fill=1, stroke=0)
+        c.setStrokeColor(INK); c.setLineWidth(1); c.rect(.5, .5, PW-1, PH-1, fill=0, stroke=1)
+        c.setDash(2, 2); c.circle(PW/2, PH-9, 3, stroke=1, fill=0); c.setDash()
     c.showPage()
 c.save()
 print(f'Built {len(jobs)} wallet templates at {target}')

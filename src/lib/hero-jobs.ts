@@ -2,8 +2,8 @@
 
 export type HeroJob = { id: string; title: string; gp: number };
 export const HERO_JOBS: HeroJob[] = [
-  ["j1", "Filer", 20], ["j2", "Filer", 20], ["j3", "Cleaner", 20], ["j4", "Cleaner", 20], ["j5", "Lunch Crew", 15], ["j6", "Lunch Crew", 15],
-  ["j7", "Class Monitor", 15], ["j8", "Distributor", 10], ["j9", "Distributor", 10], ["j10", "Line Leader", 10], ["j11", "Substitute", 10],
+  ["j1", "Filer", 10], ["j2", "Filer", 10], ["j3", "Cleaner", 10], ["j4", "Cleaner", 10], ["j5", "Lunch Crew", 10], ["j6", "Lunch Crew", 10],
+  ["j7", "Class Monitor", 10], ["j8", "Distributor", 5], ["j9", "Distributor", 5], ["j10", "Line Leader", 5], ["j11", "Substitute", 5],
   ["j12", "Hall Monitor", 5], ["j13", "Door Holder", 5], ["j14", "Door Holder", 5],
 ].map(([id, title, gp]) => ({ id: id as string, title: title as string, gp: gp as number }));
 
@@ -96,7 +96,7 @@ export function rotate(s: HeroJobsState, names: string[]): HeroJobsState {
   };
 }
 
-/** Hero points earned in a week: the job's points after 3 or more check-ins. */
+/** Stamp rewards after 3 or more check-ins; legacy gp/points field names remain compatible. */
 export function pay(s: HeroWeek, name: string): number {
   const job = HERO_JOBS.find((j) => s.assign[j.id] === name);
   return job && (s.checkIns[name] ?? 0) >= 3 ? job.gp : 0;

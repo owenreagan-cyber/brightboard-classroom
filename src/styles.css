@@ -225,7 +225,8 @@ body { font-family: var(--font-body); }
 }
 
 /* Printable hero license cards */
-.license-card { width: 2.125in; height: 3.375in; flex-shrink: 0; break-inside: avoid; }
+.license-card { width: 2.5in; height: 3.5in; flex-shrink: 0; break-inside: avoid; }
+.license-lanyard { width: 3in; height: 4in; }
 @media print {
   @page { margin: 0.3in; size: letter; }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
