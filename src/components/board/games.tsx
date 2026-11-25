@@ -5,6 +5,23 @@ import {
   type PrizeState, type RngState, type StarState, type Tier,
 } from "@/lib/games";
 
+const pendingSaves: Record<string, unknown> = {};
+let saveChain: Promise<void> = Promise.resolve();
+/** One save at a time; each re-reads the account and merges every pending tool so concurrent saves never drop each other. */
+function queueCloudSave(key: string, value: unknown): Promise<void> {
+  pendingSaves[key] = value;
+  saveChain = saveChain.then(async () => {
+    const keys = Object.keys(pendingSaves);
+    if (!keys.length) return;
+    const batch = { ...pendingSaves };
+    keys.forEach((k) => delete pendingSaves[k]);
+    const { data } = await supabase.auth.getUser();
+    const games = { ...((data.user?.user_metadata?.["games"] as Record<string, unknown>) ?? {}), ...batch };
+    await supabase.auth.updateUser({ data: { games } });
+  }).catch(() => undefined);
+  return saveChain;
+}
+
 /** State saved in this browser and, when cloud is set, in the teacher's account so it follows them across devices. */
 export function usePersisted<T>(key: string, fallback: () => T, valid: (v: unknown) => boolean, cloud = false) {
   const [s, setRaw] = useState<T>(fallback);
@@ -26,15 +43,10 @@ export function usePersisted<T>(key: string, fallback: () => T, valid: (v: unkno
     const t = window.setInterval(pull, 15000);
     return () => { window.removeEventListener("focus", onFocus); window.clearInterval(t); };
   }, [key, cloud]); // eslint-disable-line react-hooks/exhaustive-deps
-  // Push local changes (debounced).
+  // Push local changes (debounced, merged with other tools' saves so one can't overwrite another).
   useEffect(() => {
     if (!cloud || !dirty.current) return;
-    const t = window.setTimeout(async () => {
-      const { data } = await supabase.auth.getUser();
-      const games = { ...((data.user?.user_metadata?.["games"] as Record<string, unknown>) ?? {}), [key]: s };
-      await supabase.auth.updateUser({ data: { games } });
-      dirty.current = false;
-    }, 600);
+    const t = window.setTimeout(() => { void queueCloudSave(key, s).then(() => { dirty.current = false; }); }, 600);
     return () => window.clearTimeout(t);
   }, [key, s, cloud]);
   const set = (v: T) => { dirty.current = true; setRaw(v); };
