@@ -14,12 +14,12 @@ import { ymd } from "@/lib/calendar";
 import { dayOf } from "@/lib/library";
 import { dailyGroupOrder, getStagedState, slotLabel, stagedGapSec } from "@/lib/staged";
 import { usePersisted } from "./games";
-import { artForKey } from "@/lib/art";
+import { figureForKey } from "@/lib/art";
 
 export function StickerWidget({ w }: { w: Extract<Widget, { type: "sticker" }> }) {
   return (
     <div className={`sticker-figure ${w.side === "right" ? "sticker-right" : ""}`}>
-      <img src={artForKey(w.subject)} alt="" className="sticker-image" />
+      <img src={figureForKey(w.subject)} alt="" className="sticker-image" />
       {w.text && <div className="speech-bubble font-display">{w.text}</div>}
     </div>
   );

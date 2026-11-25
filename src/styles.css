@@ -196,7 +196,7 @@ body { font-family: var(--font-body); }
 .subject-day { font: 700 34px var(--font-body); color: var(--subject-ink); margin-top: 12px; }
 .sticker-figure { display: flex; align-items: center; gap: 28px; }
 .sticker-right { flex-direction: row-reverse; }
-.sticker-image { width: 280px; height: 280px; flex: none; object-fit: cover; border-radius: 50%; border: 10px solid var(--subject-paper); box-shadow: var(--shadow-pop); }
+.sticker-image { width: 300px; height: 440px; flex: none; object-fit: contain; filter: drop-shadow(6px 10px 0 color-mix(in oklab, var(--subject-ink) 35%, transparent)); }
 .speech-bubble { position: relative; flex: 1; background: var(--subject-paper); color: var(--subject-ink); border: 5px solid var(--subject-ink); border-radius: 36px; padding: 28px 34px; font-size: 40px; line-height: 1.2; overflow-wrap: anywhere; }
 .speech-bubble::before { content: ""; position: absolute; left: -34px; top: 50%; margin-top: -20px; border: 20px solid transparent; border-right: 34px solid var(--subject-ink); border-left: 0; }
 .sticker-right .speech-bubble::before { left: auto; right: -34px; border-right: 0; border-left: 34px solid var(--subject-ink); }
