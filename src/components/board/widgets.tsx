@@ -14,6 +14,16 @@ import { ymd } from "@/lib/calendar";
 import { dayOf } from "@/lib/library";
 import { dailyGroupOrder, getStagedState, slotLabel, stagedGapSec } from "@/lib/staged";
 import { usePersisted } from "./games";
+import { artForKey } from "@/lib/art";
+
+export function StickerWidget({ w }: { w: Extract<Widget, { type: "sticker" }> }) {
+  return (
+    <div className={`sticker-figure ${w.side === "right" ? "sticker-right" : ""}`}>
+      <img src={artForKey(w.subject)} alt="" className="sticker-image" />
+      {w.text && <div className="speech-bubble font-display">{w.text}</div>}
+    </div>
+  );
+}
 
 function useNow(ms = 1000) {
   const [now, setNow] = useState(() => new Date());
@@ -275,6 +285,7 @@ export function WidgetView({ w, names }: { w: Widget; names: string[] }) {
     case "spotify": return <SpotifyWidget w={w} />;
     case "lesson": return <LessonWidget w={w} />;
     case "staged": return <StagedWidget w={w} />;
+    case "sticker": return <StickerWidget w={w} />;
   }
 }
 

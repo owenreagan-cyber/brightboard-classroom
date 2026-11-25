@@ -9,6 +9,7 @@ export type Widget =
   | { id: string; type: "spotify"; url: string; autoplay?: boolean }
   | { id: string; type: "clock" }
   | { id: string; type: "lesson"; subject: string }
+  | { id: string; type: "sticker"; subject: string; text: string; side?: "left" | "right" | undefined }
   | { id: string; type: "staged"; label: string; start: string; end?: string | undefined; gapMin: number; groups: { name: string; students: string[] }[]; finale: { time: string; label: string }[] };
 
 export type SlideData = {
@@ -78,6 +79,8 @@ export function newWidget(type: Widget["type"]): Widget {
       return { id, type };
     case "lesson":
       return { id, type, subject: "Math" };
+    case "sticker":
+      return { id, type, subject: "homeroom", text: "Remember to push in your chair!" };
     case "staged":
       return { id, type, label: "Bathroom / locker", start: "09:05", end: "09:15", gapMin: 2.5, groups: HOMEROOM_GROUPS.map((g) => ({ ...g, students: [...g.students] })), finale: [{ time: "09:15", label: "Ready for Shurley!" }] };
   }

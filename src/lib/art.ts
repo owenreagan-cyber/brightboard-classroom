@@ -30,4 +30,8 @@ const SUBJECT_ART: Record<SubjectKey, { url: string }> = {
 export function artFor(d: Pick<SlideData, "folder" | "day"> & { heading?: string }): string {
   return SUBJECT_ART[subjectDesign(d).key].url;
 }
+/** Art for a subject key, falling back to the title card. */
+export function artForKey(key: string): string {
+  return (SUBJECT_ART as Record<string, { url: string }>)[key]?.url ?? title.url;
+}
 export const titleArt = title.url;

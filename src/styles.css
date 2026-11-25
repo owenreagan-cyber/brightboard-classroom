@@ -188,12 +188,18 @@ body { font-family: var(--font-body); }
 .subject-layout { position: relative; height: 100%; padding: 64px 72px; display: grid; grid-template-columns: 980px minmax(0, 1fr); gap: 48px; }
 .subject-message { display: flex; flex-direction: column; min-height: 0; }
 .subject-identifier { display: flex; align-items: center; gap: 26px; margin-bottom: 32px; }
-.subject-card-image { width: 190px; height: 136px; object-fit: cover; border: 5px solid var(--subject-paper); border-radius: 8px; box-shadow: var(--shadow-pop); }
+.subject-card-image { width: 300px; height: 210px; object-fit: cover; border: 6px solid var(--subject-paper); border-radius: 14px; box-shadow: var(--shadow-pop); transform: rotate(-3deg); }
 .subject-slide[data-card="right"] .subject-identifier { flex-direction: row-reverse; justify-content: flex-end; }
 .subject-slide[data-card="large"] .subject-identifier { flex-direction: column; align-items: flex-start; gap: 16px; }
-.subject-slide[data-card="large"] .subject-card-image { width: 420px; height: 260px; }
-.subject-label { font: 700 34px var(--subject-font); color: var(--subject-accent); }
-.subject-day { font: 700 25px var(--font-body); color: var(--subject-ink); margin-top: 12px; }
+.subject-slide[data-card="large"] .subject-card-image { width: 520px; height: 320px; }
+.subject-label { font: 700 72px/1 var(--subject-font); color: var(--subject-accent); text-transform: uppercase; letter-spacing: 0.02em; text-shadow: 4px 4px 0 var(--subject-paper); }
+.subject-day { font: 700 34px var(--font-body); color: var(--subject-ink); margin-top: 12px; }
+.sticker-figure { display: flex; align-items: center; gap: 28px; }
+.sticker-right { flex-direction: row-reverse; }
+.sticker-image { width: 280px; height: 280px; flex: none; object-fit: cover; border-radius: 50%; border: 10px solid var(--subject-paper); box-shadow: var(--shadow-pop); }
+.speech-bubble { position: relative; flex: 1; background: var(--subject-paper); color: var(--subject-ink); border: 5px solid var(--subject-ink); border-radius: 36px; padding: 28px 34px; font-size: 40px; line-height: 1.2; overflow-wrap: anywhere; }
+.speech-bubble::before { content: ""; position: absolute; left: -34px; top: 50%; margin-top: -20px; border: 20px solid transparent; border-right: 34px solid var(--subject-ink); border-left: 0; }
+.sticker-right .speech-bubble::before { left: auto; right: -34px; border-right: 0; border-left: 34px solid var(--subject-ink); }
 .subject-message .slide-title { font-size: 76px; line-height: 1.15; overflow-wrap: anywhere; }
 .subject-steps { margin-top: 36px; display: flex; flex-direction: column; gap: 18px; }
 .subject-step { display: flex; align-items: flex-start; gap: 20px; color: var(--subject-ink); background: color-mix(in oklab, var(--subject-paper) 94%, transparent); padding: 16px 22px; border-left: 6px solid var(--subject-accent); }

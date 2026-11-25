@@ -20,6 +20,7 @@ const WIDGET_TYPES: { type: Widget["type"]; label: string }[] = [
   { type: "spotify", label: "Spotify" },
   { type: "lesson", label: "Lesson & homework" },
   { type: "staged", label: "Staged group timer" },
+  { type: "sticker", label: "Character + speech bubble" },
 ];
 
 export function SlideEditor({ slide, onChange }: { slide: Slide; onChange: (s: Slide) => void }) {
@@ -141,6 +142,19 @@ function WidgetFields({ w, onChange }: { w: Widget; onChange: (w: Widget) => voi
         })}
         <Button size="sm" variant="outline" onClick={() => onChange({ ...w, finale: [...w.finale, { time: "09:15", label: "Ready!" }] })}><Plus className="h-3 w-3" /> Add message</Button>
         <p className="text-xs text-muted-foreground">Group order changes every day automatically.</p>
+      </div>
+    );
+  if (w.type === "sticker")
+    return (
+      <div className="space-y-2">
+        <select aria-label="Character" className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={w.subject} onChange={(e) => onChange({ ...w, subject: e.target.value })}>
+          {SUBJECT_DESIGNS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
+        </select>
+        <Textarea rows={2} placeholder="Reminder in the speech bubble" value={w.text} onChange={(e) => onChange({ ...w, text: e.target.value })} />
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={w.side === "right"} onChange={(e) => onChange({ ...w, side: e.target.checked ? "right" : "left" })} />
+          Bubble on the left
+        </label>
       </div>
     );
   if (w.type === "lesson")
