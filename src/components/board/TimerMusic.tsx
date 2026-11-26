@@ -27,8 +27,15 @@ export function TimerMusic({ id, running, finished, phase = null, twoPhase = fal
   const item = MUSIC_LIBRARY.find((m) => m.id === c.itemId);
   const wanted = !!item && connected && musicWanted(running, finished, phase, c.phases);
   const was = useRef(false);
+  const playRequest = useRef(0);
   useEffect(() => { if (connected) initSpotifyPlayer(); }, [connected]);
   useEffect(() => {
+    const request = ++playRequest.current;
+    // A timer can start while the Spotify player is loading. Retry when it becomes ready.
+    if (wanted && player.status !== "ready") {
+      was.current = false;
+      return;
+    }
     const act = musicAction(id, wanted, was.current, owner, finished);
     was.current = wanted;
     if (act === "play" && item) {
@@ -36,6 +43,8 @@ export function TimerMusic({ id, running, finished, phase = null, twoPhase = fal
       void (async () => {
         try {
           const uri = await resolveLibraryItem(item);
+          // Do not start late music after this timer stopped or another timer took over.
+          if (playRequest.current !== request || owner !== id) return;
           if (player.contextUri === uri && player.paused) await spotify.toggle();
           else if (player.contextUri !== uri || player.paused) await spotify.playContext(uri, true);
         } catch { /* shown by player error */ }
@@ -45,7 +54,7 @@ export function TimerMusic({ id, running, finished, phase = null, twoPhase = fal
       if (!player.paused) void fadeThen(() => spotify.toggle());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wanted]);
+  }, [wanted, player.status]);
   const size = compact ? "text-xs" : "text-sm";
   return (
     <div className={`mt-2 flex flex-wrap items-center justify-center gap-2 ${size}`} onPointerDown={(e) => e.stopPropagation()}>

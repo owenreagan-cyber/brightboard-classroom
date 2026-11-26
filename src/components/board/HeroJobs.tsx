@@ -31,7 +31,7 @@ export function HeroJobs({ names, wide = false }: { names: string[]; wide?: bool
 
   return (
     <div className={`${wide ? "w-full" : "w-[min(640px,calc(100vw-48px))]"} space-y-2`}>
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground" aria-live="polite"><span>{sync.status === "loading" ? "Loading saved jobs…" : sync.status === "saving" ? "Saving…" : sync.status === "error" ? "Not saved" : "Saved to Hero Agency"}</span><Button asChild variant="ghost" size="sm"><Link to="/hero-agency/widget">Phone widget</Link></Button></div>
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground" aria-live="polite"><span>{sync.status === "loading" ? "Loading saved jobs…" : sync.status === "saving" ? "Saving…" : sync.status === "error" ? "Not saved" : "Saved to Classroom Companion"}</span><Button asChild variant="ghost" size="sm"><Link to="/hero-agency/widget">Phone widget</Link></Button></div>
       {sync.error && <p role="alert" className="text-sm text-destructive">{sync.error}</p>}
       <fieldset disabled={sync.status === "loading" || sync.status === "saving" || sync.status === "error"} className="min-w-0 space-y-2 border-0 p-0">
       <div className="flex flex-wrap items-center gap-2">

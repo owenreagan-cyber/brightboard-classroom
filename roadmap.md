@@ -17,4 +17,5 @@
 - [x] Prepare true wallet-size Hero Agency PDF downloads with saved student names, print sheets, and visual verification.
 - [x] Replace Hero Agency rewards with 10/5 stamps and deliver verified lanyard and trading-card PDFs.
 - [x] Add phone Hero Agency widget with separately saved jobs; verify board synchronization.
-- [ ] Configure Classroom Companion-owned storage for job assignments and stamps, then connect phone and Hero Board views to it — blocked: verified Classroom Companion still expects unconfigured Firebase setup; this chat can only read that project. Storage and teacher-only access must be configured in Classroom Companion's own project chat before switching Hero Board away from its current save.
+- [x] Configure Classroom Companion-owned storage for job assignments and stamps; migrate current jobs, sync Hero Agency and the board live, and verify save/reload restoration.
+- [ ] Complete real Spotify authorization on the smartboard — blocked: requires the teacher's Spotify developer app Client ID and Spotify sign-in on that device; 14 school music choices and timer playback retry are verified with a simulated player, not audible hardware playback.
