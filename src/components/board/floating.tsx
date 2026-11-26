@@ -1,3 +1,4 @@
+import { TimerMusic } from "./TimerMusic";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Plus, X } from "lucide-react";
 import { MysteryStar, PrizeBoard, RandomNumber } from "./games";
@@ -185,6 +186,7 @@ function QuickTimer({ id }: { id: string }) {
         </button>
         <button onClick={() => { setRunning(false); setLeft(300); }} className="rounded-full bg-destructive px-5 py-2 font-bold text-destructive-foreground">Reset</button>
       </div>
+      <TimerMusic id={id} running={running} finished={left === 0} compact />
     </div>
   );
 }
@@ -229,6 +231,7 @@ function TwoPhase({ id }: { id: string }) {
         </button>
         <button onClick={() => { setRunning(false); setElapsed(0); prev.current = 1; }} className="rounded-full bg-destructive px-5 py-2 font-bold text-destructive-foreground">Reset</button>
       </div>
+      <TimerMusic id={id} running={running} finished={st.phase === "done"} phase={st.phase === "done" ? null : st.phase} twoPhase compact />
     </div>
   );
 }

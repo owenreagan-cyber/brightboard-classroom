@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useTodayAgenda } from "@/lib/school-sync";
 import { ymd } from "@/lib/calendar";
 import { dayOf } from "@/lib/library";
+import { TimerMusic } from "./TimerMusic";
 import { dailyGroupOrder, getStagedState, slotLabel, stagedGapSec } from "@/lib/staged";
 import { usePersisted } from "./games";
 import { figureForKey } from "@/lib/art";
@@ -107,6 +108,7 @@ export function TimerWidget({ w }: { w: Extract<Widget, { type: "timer" }> }) {
             <button className="kid-btn" onClick={() => setRunning((r) => !r)}>{running ? "Pause" : "Start"}</button>
             <button className="kid-btn kid-btn-soft" onClick={() => { setRunning(false); setLeft(w.seconds); }}>Reset</button>
           </div>
+          <TimerMusic id={w.id} running={running} finished={left === 0} />
         </div>
       </div>
     </div>
@@ -343,6 +345,7 @@ export function StagedWidget({ w }: { w: StagedW }) {
       {st.status === "allOut" && <div className="slide-body-lg font-display mt-4">{st.next.label} in {formatSec(st.inSec)}</div>}
       {st.status === "finale" && <div key={key} className="mt-4 animate-in zoom-in rounded-[32px] bg-primary px-8 py-6 text-center font-display text-primary-foreground" style={{ fontSize: 80, lineHeight: 1.1 }}>{st.label}</div>}
       {st.status === "done" && <div className="slide-body-lg font-display mt-4">All done! 🎉</div>}
+      <TimerMusic id={w.id} running={st.status === "going" || st.status === "allOut"} finished={st.status === "finale" || st.status === "done"} />
       <ol className="mt-6 space-y-2">
         {order.map((gi, slot) => (
           <li key={gi} className={`slide-caption flex items-center gap-4 rounded-full px-5 py-2 ${st.status === "going" && st.slot === slot ? "bg-primary text-primary-foreground" : "bg-muted/70"}`}>
